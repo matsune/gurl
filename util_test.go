@@ -1,6 +1,10 @@
 package gurl
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestIsURLTrue(t *testing.T) {
 	cases := []string{
@@ -8,9 +12,7 @@ func TestIsURLTrue(t *testing.T) {
 		"https://golang.org/",
 	}
 	for _, testCase := range cases {
-		if !isURL(testCase) {
-			t.Errorf("isURL(\"%s\") should be true", testCase)
-		}
+		assert.True(t, isURL(testCase))
 	}
 }
 
@@ -19,9 +21,7 @@ func TestIsURLFalse(t *testing.T) {
 		"htt//aaa.com",
 	}
 	for _, testCase := range cases {
-		if isURL(testCase) {
-			t.Errorf("isURL(\"%s\") should be false", testCase)
-		}
+		assert.False(t, isURL(testCase))
 	}
 }
 
@@ -48,9 +48,7 @@ func TestIsMethodTrue(t *testing.T) {
 		"TRACE",
 	}
 	for _, testCase := range cases {
-		if !isMethod(testCase) {
-			t.Errorf("isMethod(\"%s\") should be true", testCase)
-		}
+		assert.True(t, isMethod(testCase))
 	}
 }
 
@@ -61,8 +59,6 @@ func TestIsMethodFalse(t *testing.T) {
 		"_get",
 	}
 	for _, testCase := range cases {
-		if isMethod(testCase) {
-			t.Errorf("isMethod(\"%s\") should be false", testCase)
-		}
+		assert.False(t, isMethod(testCase))
 	}
 }

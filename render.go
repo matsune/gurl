@@ -5,33 +5,42 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/go-xmlfmt/xmlfmt"
 )
 
-func renderHeader(h http.Header) {
-	fmt.Println("[Header]")
+type HeaderRender func(h http.Header) string
+
+func DefaultHeaderRender(h http.Header) string {
+	b := bytes.NewBufferString("[Header]\n")
 	for k, arr := range h {
-		str := fmt.Sprintf("%s: ", k)
+		fmt.Fprintf(b, "%s: ", k)
 		for i, v := range arr {
 			if i != 0 {
-				str += fmt.Sprintf(", ")
+				fmt.Fprintf(b, ", ")
 			}
-			str += fmt.Sprintf("%s", v)
+			fmt.Fprintf(b, "%s", v)
 		}
-		fmt.Println(str)
+		fmt.Fprintf(b, "\n")
 	}
-	fmt.Println()
+	return b.String()
 }
 
 type BodyRender func(body []byte) (string, error)
 
-func plainRender(body []byte) (string, error) {
-	return string(body), nil
+func PlainRender(body []byte) (string, error) {
+	return fmt.Sprintf("[Body]\n%s", string(body)), nil
 }
 
-func jsonRender(body []byte) (string, error) {
+func JSONRender(body []byte) (string, error) {
 	var b bytes.Buffer
-	if err := json.Indent(&b, body, "", "\t"); err != nil {
+	if err := json.Indent(&b, body, "", "  "); err != nil {
 		return "", err
 	}
-	return b.String(), nil
+	return fmt.Sprintf("[Body]\n%s", b.String()), nil
+}
+
+func XMLRender(body []byte) (string, error) {
+	x := xmlfmt.FormatXML(string(body), "", "  ")
+	return fmt.Sprintf("[Body]\n%s", x), nil
 }

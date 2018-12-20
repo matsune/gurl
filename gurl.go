@@ -4,59 +4,70 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type Gurl struct {
-	req *http.Request
-	res *http.Response
+	Req          *http.Request
+	Res          *http.Response
+	HeaderRender HeaderRender
+	BodyRender   BodyRender
 }
 
 func New(opts *Options) (*Gurl, error) {
-	req, err := buildRequest(opts)
+	req, err := opts.buildRequest()
 	if err != nil {
 		return nil, err
 	}
 	return &Gurl{
-		req: req,
-		res: nil,
+		Req:          req,
+		Res:          nil,
+		HeaderRender: DefaultHeaderRender,
+		BodyRender:   nil,
 	}, nil
 }
 
 func (g *Gurl) DoRequest() error {
-	if g.req == nil {
-		return fmt.Errorf("request is nil")
+	if g.Req == nil {
+		return fmt.Errorf("Gurl.req is nil")
 	}
 
 	c := new(http.Client)
-	res, err := c.Do(g.req)
+	res, err := c.Do(g.Req)
 	if err != nil {
 		return err
 	}
-	g.res = res
+	g.Res = res
 	return nil
 }
 
+var contentRenders = map[string]BodyRender{
+	"application/json": JSONRender,
+	"application/xml":  XMLRender,
+}
+
 func (g *Gurl) Render() error {
-	renderHeader(g.res.Header)
+	fmt.Println(g.HeaderRender(g.Res.Header))
 
-	var renderFunc BodyRender
-	if strings.Contains(g.res.Header.Get("Content-Type"), "application/json") {
-		renderFunc = jsonRender
-	} else {
-		renderFunc = plainRender
+	bodyRender := g.BodyRender
+	if g.BodyRender == nil {
+		contentType := g.Res.Header.Get("Content-Type")
+		if r := contentRenders[contentType]; r != nil {
+			bodyRender = r
+		}
+		if bodyRender == nil {
+			bodyRender = PlainRender
+		}
 	}
 
-	defer g.res.Body.Close()
-	body, err := ioutil.ReadAll(g.res.Body)
+	defer g.Res.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(g.Res.Body)
 	if err != nil {
 		return err
 	}
-	str, err := renderFunc(body)
+	body, err := bodyRender(bodyBytes)
 	if err != nil {
 		return err
 	}
-	fmt.Println("[Body]")
-	fmt.Println(str)
+	fmt.Println(body)
 	return nil
 }
