@@ -12,16 +12,17 @@ import (
 type HeaderRender func(h http.Header) string
 
 func DefaultHeaderRender(h http.Header) string {
-	b := bytes.NewBufferString("[Header]\n")
+	var b bytes.Buffer
+	b.WriteString("[Header]\n")
 	for k, arr := range h {
-		fmt.Fprintf(b, "%s: ", k)
+		b.WriteString(k + ": ")
 		for i, v := range arr {
 			if i != 0 {
-				fmt.Fprintf(b, ", ")
+				b.WriteString(", ")
 			}
-			fmt.Fprintf(b, "%s", v)
+			b.WriteString(v)
 		}
-		fmt.Fprintf(b, "\n")
+		b.WriteString("\n")
 	}
 	return b.String()
 }

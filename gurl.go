@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type Gurl struct {
@@ -40,21 +41,17 @@ func (g *Gurl) DoRequest() error {
 	return nil
 }
 
-var contentRenders = map[string]BodyRender{
-	"application/json": JSONRender,
-	"application/xml":  XMLRender,
-}
-
 func (g *Gurl) Render() error {
 	fmt.Println(g.HeaderRender(g.Res.Header))
 
 	bodyRender := g.BodyRender
 	if g.BodyRender == nil {
 		contentType := g.Res.Header.Get("Content-Type")
-		if r := contentRenders[contentType]; r != nil {
-			bodyRender = r
-		}
-		if bodyRender == nil {
+		if strings.Contains(contentType, "application/json") {
+			bodyRender = JSONRender
+		} else if strings.Contains(contentType, "application/xml") {
+			bodyRender = XMLRender
+		} else {
 			bodyRender = PlainRender
 		}
 	}

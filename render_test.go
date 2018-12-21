@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHeaderRenderer(t *testing.T) {
+func TestDefaultHeaderRenderer(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", "application/json")
 	header.Add("Content-Type", "charset=utf-8")
@@ -17,4 +17,18 @@ func TestHeaderRenderer(t *testing.T) {
 	assert.Contains(t, res, "[Header]\n")
 	assert.Contains(t, res, "Content-Type: application/json, charset=utf-8")
 	assert.Contains(t, res, "Content-Length: 35")
+}
+
+func TestJSONRenderer(t *testing.T) {
+	str := `{"key1": "value1","key2": ["value2"]}`
+	res, err := JSONRender([]byte(str))
+	if assert.NoError(t, err) {
+		assert.Equal(t, `[Body]
+{
+  "key1": "value1",
+  "key2": [
+    "value2"
+  ]
+}`, res)
+	}
 }
