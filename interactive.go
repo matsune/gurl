@@ -60,40 +60,42 @@ func runInteractive(opts *Options) error {
 		opts.SetHeader(k, v)
 	}
 
-	idx, err = selectItem("Data", []string{"None", "JSON", "XML", "Form"})
-	if err != nil {
-		return err
-	}
+	if opts.Body == nil {
+		idx, err = selectItem("Data", []string{"None", "JSON", "XML", "Form"})
+		if err != nil {
+			return err
+		}
 
-	if idx == 1 {
-		str, err := openEditor()
-		if err != nil {
-			return err
-		}
-		opts.Body = JSONData(str)
-	} else if idx == 2 {
-		str, err := openEditor()
-		if err != nil {
-			return err
-		}
-		opts.Body = XMLData(str)
-	} else if idx == 3 {
-		e := url.Values{}
-		for {
-			idx, err = selectItem("FormData", []string{"End", "Add"})
+		if idx == 1 {
+			str, err := openEditor()
 			if err != nil {
 				return err
 			}
-			if idx == 0 {
-				break
-			}
-			k, v, err := inputKeyValue()
+			opts.Body = JSONData(str)
+		} else if idx == 2 {
+			str, err := openEditor()
 			if err != nil {
-				return nil
+				return err
 			}
-			e.Set(k, v)
+			opts.Body = XMLData(str)
+		} else if idx == 3 {
+			e := url.Values{}
+			for {
+				idx, err = selectItem("FormData", []string{"End", "Add"})
+				if err != nil {
+					return err
+				}
+				if idx == 0 {
+					break
+				}
+				k, v, err := inputKeyValue()
+				if err != nil {
+					return nil
+				}
+				e.Set(k, v)
+			}
+			opts.Body = EncodedData(e)
 		}
-		opts.Body = EncodedData(e)
 	}
 
 	g, err := New(opts)
