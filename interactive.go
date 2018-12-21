@@ -2,7 +2,11 @@ package gurl
 
 import (
 	"errors"
+	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
 
 	"github.com/manifoldco/promptui"
 )
@@ -49,21 +53,47 @@ func runInteractive(opts *Options) error {
 			break
 		}
 
-		prompt := promptui.Prompt{
-			Label: "Key",
-		}
-		k, err := prompt.Run()
+		k, v, err := inputKeyValue()
 		if err != nil {
-			return err
-		}
-		prompt = promptui.Prompt{
-			Label: "Value",
-		}
-		v, err := prompt.Run()
-		if err != nil {
-			return err
+			return nil
 		}
 		opts.SetHeader(k, v)
+	}
+
+	idx, err = selectItem("Data", []string{"None", "JSON", "XML", "Form"})
+	if err != nil {
+		return err
+	}
+
+	if idx == 1 {
+		str, err := openEditor()
+		if err != nil {
+			return err
+		}
+		opts.Body = JSONData(str)
+	} else if idx == 2 {
+		str, err := openEditor()
+		if err != nil {
+			return err
+		}
+		opts.Body = XMLData(str)
+	} else if idx == 3 {
+		e := url.Values{}
+		for {
+			idx, err = selectItem("FormData", []string{"End", "Add"})
+			if err != nil {
+				return err
+			}
+			if idx == 0 {
+				break
+			}
+			k, v, err := inputKeyValue()
+			if err != nil {
+				return nil
+			}
+			e.Set(k, v)
+		}
+		opts.Body = EncodedData(e)
 	}
 
 	g, err := New(opts)
@@ -76,6 +106,38 @@ func runInteractive(opts *Options) error {
 	}
 
 	return g.Render()
+}
+
+func openEditor() (string, error) {
+	const tmpFile = "gurl.tmp"
+
+	file, err := os.Create(tmpFile)
+	if err != nil {
+		return "", err
+	}
+	file.Close()
+
+	cmd := exec.Command("vim", tmpFile)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	if err = cmd.Run(); err != nil {
+		return "", err
+	}
+
+	file, err = os.OpenFile(tmpFile, os.O_RDONLY, 0600)
+	if err != nil {
+		return "", nil
+	}
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		file.Close()
+		return "", nil
+	}
+	file.Close()
+	if err = os.Remove(tmpFile); err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
 func selectMethod() (string, error) {
@@ -133,4 +195,22 @@ func inputPassword() (string, error) {
 		Mask:  '*',
 	}
 	return prompt.Run()
+}
+
+func inputKeyValue() (string, string, error) {
+	prompt := promptui.Prompt{
+		Label: "Key",
+	}
+	k, err := prompt.Run()
+	if err != nil {
+		return "", "", err
+	}
+	prompt = promptui.Prompt{
+		Label: "Value",
+	}
+	v, err := prompt.Run()
+	if err != nil {
+		return "", "", err
+	}
+	return k, v, nil
 }
