@@ -2,6 +2,7 @@ package gurl
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -45,10 +46,19 @@ func runInteractive(opts *Options) error {
 	}
 
 	for {
-		idx, err = selectItem("Custom Header", []string{"End", "Add"})
+		prompt := promptui.Select{
+			Label: "Header",
+			Items: []string{"End", "Add"},
+			Templates: &promptui.SelectTemplates{
+				Selected: fmt.Sprintf(``),
+			},
+		}
+
+		idx, _, err := prompt.Run()
 		if err != nil {
 			return err
 		}
+
 		if idx == 0 {
 			break
 		}
@@ -98,6 +108,8 @@ func runInteractive(opts *Options) error {
 		}
 	}
 
+	fmt.Println()
+
 	g, err := New(opts)
 	if err != nil {
 		return err
@@ -111,7 +123,7 @@ func runInteractive(opts *Options) error {
 }
 
 func openEditor() (string, error) {
-	const tmpFile = "gurl.tmp"
+	tmpFile := fmt.Sprintf("gurl.%s.tmp", randString(5))
 
 	file, err := os.Create(tmpFile)
 	if err != nil {
@@ -154,7 +166,7 @@ func selectMethod() (string, error) {
 		http.MethodOptions,
 		http.MethodTrace,
 	}
-	idx, err := selectItem("Select Method", methods)
+	idx, err := selectItem("Method", methods)
 	return methods[idx], err
 }
 
@@ -165,9 +177,14 @@ func inputURL() (string, error) {
 		}
 		return nil
 	}
+	templates := &promptui.PromptTemplates{
+		Success: fmt.Sprintf(`{{ "%s" | green }} {{ . }}: `, promptui.IconGood),
+	}
+
 	prompt := promptui.Prompt{
-		Label:    "URL",
-		Validate: validate,
+		Label:     "URL",
+		Validate:  validate,
+		Templates: templates,
 	}
 	return prompt.Run()
 }
@@ -176,7 +193,11 @@ func selectItem(label string, items []string) (int, error) {
 	prompt := promptui.Select{
 		Label: label,
 		Items: items,
+		Templates: &promptui.SelectTemplates{
+			Selected: fmt.Sprintf(`{{ "%s" | green }} %s: {{ . }}`, promptui.IconGood, label),
+		},
 	}
+
 	idx, _, err := prompt.Run()
 	if err != nil {
 		return 0, err
@@ -187,6 +208,9 @@ func selectItem(label string, items []string) (int, error) {
 func inputUser() (string, error) {
 	prompt := promptui.Prompt{
 		Label: "user",
+		Templates: &promptui.PromptTemplates{
+			Success: fmt.Sprint(`{{ . }}: `),
+		},
 	}
 	return prompt.Run()
 }
@@ -195,6 +219,9 @@ func inputPassword() (string, error) {
 	prompt := promptui.Prompt{
 		Label: "password",
 		Mask:  '*',
+		Templates: &promptui.PromptTemplates{
+			Success: fmt.Sprint(`{{ . }}: `),
+		},
 	}
 	return prompt.Run()
 }
@@ -202,6 +229,9 @@ func inputPassword() (string, error) {
 func inputKeyValue() (string, string, error) {
 	prompt := promptui.Prompt{
 		Label: "Key",
+		Templates: &promptui.PromptTemplates{
+			Success: fmt.Sprint(`{{ . }}: `),
+		},
 	}
 	k, err := prompt.Run()
 	if err != nil {
@@ -209,6 +239,9 @@ func inputKeyValue() (string, string, error) {
 	}
 	prompt = promptui.Prompt{
 		Label: "Value",
+		Templates: &promptui.PromptTemplates{
+			Success: fmt.Sprint(`{{ . }}: `),
+		},
 	}
 	v, err := prompt.Run()
 	if err != nil {
