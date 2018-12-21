@@ -19,6 +19,7 @@ func New(opts *Options) (*Gurl, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Gurl{
 		Req:          req,
 		Res:          nil,
@@ -46,10 +47,10 @@ func (g *Gurl) Render() error {
 
 	bodyRender := g.BodyRender
 	if g.BodyRender == nil {
-		contentType := g.Res.Header.Get("Content-Type")
-		if strings.Contains(contentType, "application/json") {
+		cType := g.Res.Header.Get("Content-Type")
+		if strings.Contains(cType, "application/json") {
 			bodyRender = JSONRender
-		} else if strings.Contains(contentType, "application/xml") {
+		} else if strings.Contains(cType, "application/xml") {
 			bodyRender = XMLRender
 		} else {
 			bodyRender = PlainRender
