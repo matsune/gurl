@@ -15,6 +15,15 @@ func TestParseFlagsVersion(t *testing.T) {
 	}
 }
 
+func TestParseFlagsInteractive(t *testing.T) {
+	args := []string{"./gurl", "-i"}
+	f, rest, err := parseFlags(args)
+	if assert.NoError(t, err) {
+		assert.Empty(t, rest)
+		assert.True(t, f.Interactive)
+	}
+}
+
 func TestParseFlagsBasic(t *testing.T) {
 	args := []string{"gurl", "-u=user:pass"}
 	f, rest, err := parseFlags(args)

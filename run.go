@@ -6,12 +6,14 @@ import (
 	"strings"
 )
 
-const VERSION = "1.0"
+const gurlVersion = "1.0"
 
 const (
 	exitOK = iota
 	exitError
 )
+
+var interactiveMode bool
 
 func Run(args []string) int {
 	f, args, err := parseFlags(args)
@@ -20,46 +22,44 @@ func Run(args []string) int {
 	}
 
 	if f.Version {
-		fmt.Printf("gurl version %s\n", VERSION)
+		fmt.Printf("gurl version %s\n", gurlVersion)
 		return exitOK
 	}
 
-	if len(args) == 0 {
-		return runInteractive()
-	} else {
-		return runOneline(f, args)
-	}
-}
-
-func runInteractive() int {
-	fmt.Fprintln(os.Stderr, "unimplemented interactive mode")
-	return exitError
-}
-
-func runOneline(f *Flags, args []string) int {
 	opts, err := parseOptions(f, args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return exitError
 	}
 
-	g, err := New(opts)
-	if err != nil {
+	var run func(*Options) error
+	if interactiveMode {
+		run = runInteractive
+	} else {
+		run = runOneline
+	}
+	if err = run(opts); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return exitError
+	}
+	return exitOK
+}
+
+func runOneline(opts *Options) error {
+	g, err := New(opts)
+	if err != nil {
+		return err
 	}
 
 	if err := g.DoRequest(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return exitError
+		return err
 	}
 
 	if err := g.Render(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return exitError
+		return err
 	}
 
-	return exitOK
+	return nil
 }
 
 func parseOptions(f *Flags, args []string) (*Options, error) {
@@ -85,11 +85,13 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 		}
 	}
 
-	if len(_url) == 0 {
+	interactiveMode = len(args) == 0 || f.Interactive
+
+	if !interactiveMode && len(_url) == 0 {
 		return nil, fmt.Errorf("no url")
 	}
 
-	if len(method) == 0 {
+	if !interactiveMode && len(method) == 0 {
 		method = "GET"
 	}
 
@@ -99,13 +101,7 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 	}
 
 	var body BodyData
-	if len(f.Basic) > 0 {
-		user, pass, err := split(f.Basic, ":")
-		if err != nil {
-			return nil, err
-		}
-		header["Authorization"] = []string{fmt.Sprintf("Basic %s", basicAuth(user, pass))}
-	} else if f.JSON != nil {
+	if f.JSON != nil {
 		json := JSONData(*f.JSON)
 		body = &json
 	} else if f.XML != nil {
@@ -120,10 +116,18 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 		body = &b
 	}
 
-	return &Options{
+	opts := Options{
 		Method: method,
 		URL:    _url,
 		Header: header,
 		Body:   body,
-	}, nil
+	}
+	if len(f.Basic) > 0 {
+		user, pass, err := split(f.Basic, ":")
+		if err != nil {
+			return nil, err
+		}
+		opts.setBasic(user, pass)
+	}
+	return &opts, nil
 }

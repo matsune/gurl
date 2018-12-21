@@ -5,12 +5,13 @@ import (
 )
 
 type Flags struct {
-	Version bool     `short:"v" long:"version" description:"Show version"`
-	Basic   string   `short:"u" long:"user" description:"Basic auth <user:password>"`
-	Headers []string `short:"H" long:"header" description:"Extra header <key:value>"`
-	JSON    *string  `short:"j" long:"json" description:"JSON data"`
-	XML     *string  `short:"x" long:"xml" description:"XML data"`
-	Encoded []string `short:"d" long:"data" description:"Form URL Encoded data <key=value>"`
+	Version     bool     `short:"v" long:"version" description:"Show version"`
+	Interactive bool     `short:"i" long:"interactive" description:"Interactive mode"`
+	Basic       string   `short:"u" long:"user" description:"Basic auth <user:password>"`
+	Headers     []string `short:"H" long:"header" description:"Extra header <key:value>"`
+	JSON        *string  `short:"j" long:"json" description:"JSON data"`
+	XML         *string  `short:"x" long:"xml" description:"XML data"`
+	Encoded     []string `short:"d" long:"data" description:"Form URL Encoded data <key=value>"`
 }
 
 func parseFlags(args []string) (*Flags, []string, error) {

@@ -1,6 +1,7 @@
 package gurl
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -10,6 +11,10 @@ type Options struct {
 	URL    string
 	Header http.Header
 	Body   BodyData
+}
+
+func (opts *Options) setBasic(user, pass string) {
+	opts.Header["Authorization"] = []string{fmt.Sprintf("Basic %s", basicAuth(user, pass))}
 }
 
 func (opts *Options) buildRequest() (req *http.Request, err error) {
