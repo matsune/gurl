@@ -35,6 +35,12 @@
   version = "v1.1.1"
 
 [[projects]]
+  name = "github.com/fatih/color"
+  packages = ["."]
+  revision = "5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4"
+  version = "v1.7.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/go-xmlfmt/xmlfmt"
   packages = ["."]
@@ -171,6 +177,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0469d18678f4e9de2c2003a73462d65d1393d3bd7e6917d59517022bb0a669a8"
+  inputs-digest = "43668a55b9f1d5c4b81568eb8771dd5c064cd009ce1de01869ef6dfc3a707d47"
   solver-name = "gps-cdcl"
   solver-version = 1

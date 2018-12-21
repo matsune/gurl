@@ -12,6 +12,8 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
+const editor = "vim"
+
 func runInteractive(opts *Options) error {
 	if len(opts.Method) == 0 {
 		m, err := selectMethod()
@@ -131,7 +133,7 @@ func openEditor() (string, error) {
 	}
 	file.Close()
 
-	cmd := exec.Command("vim", tmpFile)
+	cmd := exec.Command(editor, tmpFile)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	if err = cmd.Run(); err != nil {

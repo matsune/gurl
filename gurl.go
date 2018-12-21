@@ -8,10 +8,9 @@ import (
 )
 
 type Gurl struct {
-	Req          *http.Request
-	Res          *http.Response
-	HeaderRender HeaderRender
-	BodyRender   BodyRender
+	Req      *http.Request
+	Res      *http.Response
+	Renderer Renderer
 }
 
 func New(opts *Options) (*Gurl, error) {
@@ -21,10 +20,9 @@ func New(opts *Options) (*Gurl, error) {
 	}
 
 	return &Gurl{
-		Req:          req,
-		Res:          nil,
-		HeaderRender: DefaultHeaderRender,
-		BodyRender:   nil,
+		Req:      req,
+		Res:      nil,
+		Renderer: *DefaultRenderer(),
 	}, nil
 }
 
@@ -43,29 +41,32 @@ func (g *Gurl) DoRequest() error {
 }
 
 func (g *Gurl) Render() error {
-	fmt.Println(g.HeaderRender(g.Res.Header))
+	if g.Renderer.Status != nil {
+		fmt.Print(g.Renderer.Status(g.Res.Status, g.Res.StatusCode))
+	}
 
-	bodyRender := g.BodyRender
-	if g.BodyRender == nil {
-		cType := g.Res.Header.Get("Content-Type")
-		if strings.Contains(cType, "application/json") {
-			bodyRender = JSONRender
-		} else if strings.Contains(cType, "application/xml") {
-			bodyRender = XMLRender
-		} else {
-			bodyRender = PlainRender
+	if g.Renderer.Header != nil {
+		fmt.Print(g.Renderer.Header(g.Res.Header))
+	}
+
+	var bodyRender BodyRender
+	cType := g.Res.Header.Get("Content-Type")
+	if strings.Contains(cType, "application/json") {
+		bodyRender = g.Renderer.JSON
+	} else if strings.Contains(cType, "application/xml") {
+		bodyRender = g.Renderer.XML
+	} else {
+		bodyRender = g.Renderer.Plain
+	}
+
+	if bodyRender != nil {
+		defer g.Res.Body.Close()
+		bodyBytes, err := ioutil.ReadAll(g.Res.Body)
+		if err != nil {
+			return err
 		}
+		fmt.Print(bodyRender(string(bodyBytes)))
 	}
 
-	defer g.Res.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(g.Res.Body)
-	if err != nil {
-		return err
-	}
-	body, err := bodyRender(bodyBytes)
-	if err != nil {
-		return err
-	}
-	fmt.Println(body)
 	return nil
 }
