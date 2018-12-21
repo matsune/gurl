@@ -37,7 +37,33 @@ func runInteractive(opts *Options) error {
 		if err != nil {
 			return err
 		}
-		opts.setBasic(u, p)
+		opts.SetBasic(u, p)
+	}
+
+	for {
+		idx, err = selectItem("Custom Header", []string{"End", "Add"})
+		if err != nil {
+			return err
+		}
+		if idx == 0 {
+			break
+		}
+
+		prompt := promptui.Prompt{
+			Label: "Key",
+		}
+		k, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		prompt = promptui.Prompt{
+			Label: "Value",
+		}
+		v, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		opts.SetHeader(k, v)
 	}
 
 	g, err := New(opts)

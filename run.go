@@ -127,7 +127,7 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 		if err != nil {
 			return nil, err
 		}
-		opts.setBasic(user, pass)
+		opts.SetBasic(user, pass)
 	}
 	return &opts, nil
 }
