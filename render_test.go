@@ -13,8 +13,8 @@ func TestHeaderRenderer(t *testing.T) {
 	header.Add("Content-Type", "charset=utf-8")
 	header.Set("Content-Length", "35")
 
-	assert.Equal(t, `[Header]
-Content-Type: application/json, charset=utf-8
-Content-Length: 35
-`, DefaultHeaderRender(header))
+	res := DefaultHeaderRender(header)
+	assert.Contains(t, res, "[Header]\n")
+	assert.Contains(t, res, "Content-Type: application/json, charset=utf-8")
+	assert.Contains(t, res, "Content-Length: 35")
 }

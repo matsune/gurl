@@ -2,12 +2,8 @@ package gurl
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"strings"
-
-	flags "github.com/jessevdk/go-flags"
 )
 
 const VERSION = "1.0"
@@ -16,25 +12,6 @@ const (
 	exitOK = iota
 	exitError
 )
-
-type Flags struct {
-	Version bool     `short:"v" long:"version" description:"Show version"`
-	Headers []string `short:"H" long:"header" description:"Extra header (format key:value)"`
-	JSON    *string  `short:"j" long:"json" description:"JSON data"`
-	XML     *string  `short:"x" long:"xml" description:"XML data"`
-	Encoded []string `short:"d" long:"data" description:"Form URL Encoded data (format key=value)"`
-}
-
-func parseFlags(args []string) (*Flags, []string, error) {
-	var f Flags
-	p := flags.NewParser(&f, flags.Default)
-	p.Usage = "[METHOD] URL [OPTIONS]"
-	args, err := p.ParseArgs(os.Args)
-	if err != nil {
-		return nil, nil, err
-	}
-	return &f, args, nil
-}
 
 func Run(args []string) int {
 	f, args, err := parseFlags(args)
@@ -89,7 +66,7 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 	var _url, method string
 	var err error
 
-	for _, arg := range args[1:] {
+	for _, arg := range args {
 		if isURL(arg) {
 			if len(_url) > 0 {
 				err = fmt.Errorf("has multiple URLs")
@@ -116,37 +93,31 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 		method = "GET"
 	}
 
-	header := make(http.Header)
-	for _, kv := range f.Headers {
-		kvs := strings.Split(kv, ":")
-		if len(kvs) != 2 {
-			return nil, fmt.Errorf("invalid key:value format %s", kv)
-		}
-		key := kvs[0]
-		value := kvs[1]
-		header.Set(key, value)
+	header, err := splitKVs(f.Headers, ":")
+	if err != nil {
+		return nil, err
 	}
 
 	var body BodyData
-	if f.JSON != nil {
+	if len(f.Basic) > 0 {
+		user, pass, err := split(f.Basic, ":")
+		if err != nil {
+			return nil, err
+		}
+		header["Authorization"] = []string{fmt.Sprintf("Basic %s", basicAuth(user, pass))}
+	} else if f.JSON != nil {
 		json := JSONData(*f.JSON)
 		body = &json
 	} else if f.XML != nil {
 		xml := XMLData(*f.XML)
 		body = &xml
 	} else if f.Encoded != nil {
-		v := url.Values{}
-		for _, kv := range f.Encoded {
-			kvs := strings.Split(kv, "=")
-			if len(kvs) != 2 {
-				return nil, fmt.Errorf("invalid key=value format %s", kv)
-			}
-			key := kvs[0]
-			value := kvs[1]
-			v.Set(key, value)
+		v, err := splitKVs(f.Encoded, "=")
+		if err != nil {
+			return nil, err
 		}
-		ff := EncodedData(v)
-		body = &ff
+		b := EncodedData(v)
+		body = &b
 	}
 
 	return &Options{

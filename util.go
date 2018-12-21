@@ -1,6 +1,8 @@
 package gurl
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -30,4 +32,32 @@ func isMethod(s string) bool {
 		}
 	}
 	return false
+}
+
+func split(str, sep string) (key, value string, err error) {
+	kvs := strings.Split(str, sep)
+	if len(kvs) != 2 {
+		err = fmt.Errorf("invalid key%svalue format %s", sep, str)
+		return
+	}
+	key = kvs[0]
+	value = kvs[1]
+	return
+}
+
+func splitKVs(kvs []string, sep string) (map[string][]string, error) {
+	m := make(map[string][]string)
+	for _, kv := range kvs {
+		k, v, err := split(kv, sep)
+		if err != nil {
+			return nil, err
+		}
+		m[k] = append(m[k], v)
+	}
+	return m, nil
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
