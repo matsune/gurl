@@ -30,6 +30,7 @@ func TestJSONRenderer(t *testing.T) {
     "value2"
   ]
 }
+
 `, res)
 	}
 }

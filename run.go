@@ -2,9 +2,7 @@ package gurl
 
 import (
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
 )
 
 const gurlVersion = "1.0"
@@ -14,27 +12,25 @@ const (
 	exitError
 )
 
-var interactiveMode bool
-
 func Run(args []string) int {
-	f, args, err := parseFlags(args)
+	cmdArgs, err := parseArgs(args)
 	if err != nil {
 		return exitError
 	}
 
-	if f.Version {
+	if cmdArgs.flags.Version {
 		fmt.Printf("gurl version %s\n", gurlVersion)
 		return exitOK
 	}
 
-	opts, err := parseOptions(f, args)
+	opts, err := parseOptions(cmdArgs)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return exitError
 	}
 
-	if interactiveMode {
-		err = runInteractive(opts, f.OutOneline)
+	if cmdArgs.isInteractive {
+		err = runInteractive(opts, cmdArgs.flags.OutOneline)
 	} else {
 		err = runOneline(opts)
 	}
@@ -60,85 +56,4 @@ func runOneline(opts *Options) error {
 	}
 
 	return nil
-}
-
-func parseOptions(f *Flags, args []string) (*Options, error) {
-	var _url, method string
-	var err error
-
-	for _, arg := range args {
-		if isURL(arg) {
-			if len(_url) > 0 {
-				err = fmt.Errorf("has multiple URLs: '%s %s'", _url, arg)
-				return nil, err
-			}
-			_url = arg
-		} else if isMethod(arg) {
-			if len(method) > 0 {
-				err = fmt.Errorf("has multiple methods: '%s %s'", method, arg)
-				return nil, err
-			}
-			method = strings.ToUpper(arg)
-		} else {
-			err = fmt.Errorf("unknown argument: %s", arg)
-			return nil, err
-		}
-	}
-
-	interactiveMode = len(args) == 0 || f.Interactive
-
-	if !interactiveMode && len(_url) == 0 {
-		return nil, fmt.Errorf("no URL")
-	}
-
-	header, err := splitKVs(f.Headers, ":")
-	if err != nil {
-		return nil, err
-	}
-
-	var body BodyData
-	if f.JSON != nil {
-		json := JSONData(*f.JSON)
-		body = &json
-	} else if f.XML != nil {
-		xml := XMLData(*f.XML)
-		body = &xml
-	} else if f.Encoded != nil {
-		v, err := splitKVs(f.Encoded, "=")
-		if err != nil {
-			return nil, err
-		}
-		b := EncodedData(v)
-		body = &b
-	}
-
-	if !interactiveMode && len(method) == 0 {
-		if body == nil {
-			method = http.MethodGet
-		} else {
-			method = http.MethodPost
-		}
-	}
-
-	var b *Basic
-	if len(f.Basic) > 0 {
-		user, pass, err := split(f.Basic, ":")
-		if err != nil {
-			return nil, err
-		}
-		b = &Basic{
-			User:     user,
-			Password: pass,
-		}
-	}
-
-	opts := Options{
-		Method:       method,
-		URL:          _url,
-		Basic:        b,
-		CustomHeader: header,
-		Body:         body,
-	}
-
-	return &opts, nil
 }
