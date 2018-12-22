@@ -47,19 +47,23 @@ func colorForStatus(code int) color.Attribute {
 	}
 }
 
-func DefaultStatusRender(status string, code int) string {
-	d := color.New(colorForStatus(code))
-	return fmt.Sprintf("Status: %s\n\n", d.Sprintf("%s", status))
+var sectionColor = color.New(color.Underline)
+
+func sectionStr(str string) string {
+	return fmt.Sprintf("%s\n", sectionColor.Sprint(str))
 }
 
-const (
-	headerSection = "--- Header ---\n\n"
-	bodySection   = "---  Body  ---\n\n"
-)
+func statusStr(status string, code int) string {
+	return color.New(colorForStatus(code)).Sprintf("%s", status)
+}
+
+func DefaultStatusRender(status string, code int) string {
+	return fmt.Sprintf("%s%s\n\n", sectionStr("> Status"), statusStr(status, code))
+}
 
 func DefaultHeaderRender(h http.Header) string {
 	var b bytes.Buffer
-	b.WriteString(headerSection)
+	b.WriteString(sectionStr("> Header"))
 	for k, arr := range h {
 		b.WriteString(k + ": ")
 		for i, v := range arr {
@@ -75,7 +79,7 @@ func DefaultHeaderRender(h http.Header) string {
 }
 
 func PlainRender(body string) string {
-	return fmt.Sprintf("%s%s", bodySection, body)
+	return fmt.Sprintf("%s%s\n\n", sectionStr("> Body"), body)
 }
 
 func JSONRender(body string) string {
@@ -83,10 +87,10 @@ func JSONRender(body string) string {
 	if err := json.Indent(&b, []byte(body), "", "  "); err != nil {
 		return ""
 	}
-	return fmt.Sprintf("%s%s", bodySection, b.String())
+	return fmt.Sprintf("%s%s\n\n", sectionStr("> Body"), b.String())
 }
 
 func XMLRender(body string) string {
 	x := xmlfmt.FormatXML(body, "", "  ")
-	return fmt.Sprintf("%s%s", bodySection, x)
+	return fmt.Sprintf("%s%s\n\n", sectionStr("> Body"), x)
 }

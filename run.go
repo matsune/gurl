@@ -33,13 +33,12 @@ func Run(args []string) int {
 		return exitError
 	}
 
-	var run func(*Options) error
 	if interactiveMode {
-		run = runInteractive
+		err = runInteractive(opts, f.OutOneline)
 	} else {
-		run = runOneline
+		err = runOneline(opts)
 	}
-	if err = run(opts); err != nil {
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return exitError
 	}
@@ -121,18 +120,25 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 		}
 	}
 
-	opts := Options{
-		Method: method,
-		URL:    _url,
-		Header: header,
-		Body:   body,
-	}
+	var b *Basic
 	if len(f.Basic) > 0 {
 		user, pass, err := split(f.Basic, ":")
 		if err != nil {
 			return nil, err
 		}
-		opts.SetBasic(user, pass)
+		b = &Basic{
+			User:     user,
+			Password: pass,
+		}
 	}
+
+	opts := Options{
+		Method:       method,
+		URL:          _url,
+		Basic:        b,
+		CustomHeader: header,
+		Body:         body,
+	}
+
 	return &opts, nil
 }

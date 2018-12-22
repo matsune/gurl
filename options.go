@@ -6,28 +6,42 @@ import (
 	"strings"
 )
 
+type (
+	Basic struct {
+		User     string
+		Password string
+	}
+)
 type Options struct {
-	Method string
-	URL    string
-	Header http.Header
-	Body   BodyData
+	Method       string
+	URL          string
+	Basic        *Basic
+	CustomHeader http.Header
+	Body         BodyData
 }
 
-func (opts *Options) SetBasic(user, pass string) {
-	opts.SetHeader("Authorization", fmt.Sprintf("Basic %s", basicAuth(user, pass)))
-}
-
-func (opts *Options) SetHeader(k, v string) {
-	opts.Header.Set(k, v)
+func (opts *Options) buildHeader() *http.Header {
+	h := http.Header{}
+	for k, arr := range opts.CustomHeader {
+		for _, v := range arr {
+			h.Add(k, v)
+		}
+	}
+	if opts.Body != nil {
+		h.Set("Content-Type", opts.Body.ContentType())
+	}
+	if opts.Basic != nil {
+		h.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth(opts.Basic.User, opts.Basic.Password)))
+	}
+	return &h
 }
 
 func (opts *Options) buildRequest() (req *http.Request, err error) {
 	if opts.Body != nil {
 		req, err = http.NewRequest(opts.Method, opts.URL, strings.NewReader(opts.Body.Raw()))
-		opts.SetHeader("Content-Type", opts.Body.ContentType())
 	} else {
 		req, err = http.NewRequest(opts.Method, opts.URL, nil)
 	}
-	req.Header = opts.Header
+	req.Header = *opts.buildHeader()
 	return
 }

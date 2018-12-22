@@ -24,6 +24,15 @@ func TestParseFlagsInteractive(t *testing.T) {
 	}
 }
 
+func TestParseFlagsOutOneline(t *testing.T) {
+	args := []string{"./gurl", "-o"}
+	f, rest, err := parseFlags(args)
+	if assert.NoError(t, err) {
+		assert.Empty(t, rest)
+		assert.True(t, f.OutOneline)
+	}
+}
+
 func TestParseFlagsBasic(t *testing.T) {
 	args := []string{"gurl", "-u=user:pass"}
 	f, rest, err := parseFlags(args)

@@ -1,6 +1,8 @@
 package gurl
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -8,13 +10,14 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 )
 
 const editor = "vim"
 
-func runInteractive(opts *Options) error {
+func runInteractive(opts *Options, outOneline bool) error {
 	if len(opts.Method) == 0 {
 		m, err := selectMethod()
 		if err != nil {
@@ -44,7 +47,10 @@ func runInteractive(opts *Options) error {
 		if err != nil {
 			return err
 		}
-		opts.SetBasic(u, p)
+		opts.Basic = &Basic{
+			User:     u,
+			Password: p,
+		}
 	}
 
 	for {
@@ -69,7 +75,8 @@ func runInteractive(opts *Options) error {
 		if err != nil {
 			return nil
 		}
-		opts.SetHeader(k, v)
+
+		opts.CustomHeader.Add(k, v)
 	}
 
 	if opts.Body == nil {
@@ -121,7 +128,16 @@ func runInteractive(opts *Options) error {
 		return err
 	}
 
-	return g.Render()
+	err = g.Render()
+	if err != nil {
+		return err
+	}
+
+	if outOneline {
+		return outputOneline(opts)
+	}
+
+	return nil
 }
 
 func openEditor() (string, error) {
@@ -250,4 +266,52 @@ func inputKeyValue() (string, string, error) {
 		return "", "", err
 	}
 	return k, v, nil
+}
+
+func outputOneline(opts *Options) error {
+	path := os.Args[0]
+	m := opts.Method
+	url := opts.URL
+
+	args := []string{path, m, url}
+
+	if opts.Basic != nil {
+		u := fmt.Sprintf("-u %s:%s", opts.Basic.User, opts.Basic.Password)
+		args = append(args, u)
+	}
+
+	if len(opts.CustomHeader) != 0 {
+		var h string
+		for k, arr := range opts.CustomHeader {
+			for _, v := range arr {
+				h += fmt.Sprintf("-H %s=%s ", k, v)
+			}
+		}
+		args = append(args, h)
+	}
+
+	if opts.Body != nil {
+		var d string
+		switch v := opts.Body.(type) {
+		case JSONData:
+			buf := new(bytes.Buffer)
+			if err := json.Compact(buf, []byte(v)); err != nil {
+				return err
+			}
+			d = fmt.Sprintf("-j '%s'", buf)
+		case XMLData:
+			d = fmt.Sprintf("-x '%s'", v)
+		case EncodedData:
+			for k, arr := range v {
+				for _, v := range arr {
+					d += fmt.Sprintf("-d %s=%s ", k, v)
+				}
+			}
+		}
+		args = append(args, d)
+	}
+
+	fmt.Print(sectionStr("> one-liners"))
+	fmt.Println(strings.Join(args, " "))
+	return nil
 }

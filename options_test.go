@@ -13,10 +13,10 @@ func TestOptionsBuildRequest(t *testing.T) {
 	h.Set("CustomHeader", "GURL")
 
 	opt := Options{
-		Method: "GET",
-		URL:    "http://localhost",
-		Header: h,
-		Body:   JSONData(`{"key": "value"}`),
+		Method:       "GET",
+		URL:          "http://localhost",
+		CustomHeader: h,
+		Body:         JSONData(`{"key": "value"}`),
 	}
 	req, err := opt.buildRequest()
 	if assert.NoError(t, err) {
