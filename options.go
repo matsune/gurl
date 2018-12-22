@@ -39,10 +39,14 @@ func (opts *Options) buildHeader() *http.Header {
 
 func (opts *Options) buildRequest() (req *http.Request, err error) {
 	m := strings.ToUpper(opts.Method)
+	u := opts.URL
+	if strings.Index(u, "http") != 0 {
+		u = "http://" + u
+	}
 	if opts.Body != nil {
-		req, err = http.NewRequest(m, opts.URL, strings.NewReader(opts.Body.Raw()))
+		req, err = http.NewRequest(m, u, strings.NewReader(opts.Body.Raw()))
 	} else {
-		req, err = http.NewRequest(m, opts.URL, nil)
+		req, err = http.NewRequest(m, u, nil)
 	}
 	req.Header = *opts.buildHeader()
 	return
