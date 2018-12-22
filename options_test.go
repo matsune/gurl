@@ -35,6 +35,7 @@ func TestOptionsBuildRequest(t *testing.T) {
 		assert.Equal(t, "http://localhost", req.URL.String())
 		assert.Equal(t, "b", req.Header.Get("a"))
 		assert.Equal(t, "application/xml", req.Header.Get("Content-Type"))
+		assert.Nil(t, opt.Basic)
 
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(req.Body)
@@ -50,7 +51,7 @@ func TestParseOptions(t *testing.T) {
 		flags: cmdFlags{
 			Basic:   "user:password",
 			Headers: []string{"a:b"},
-			JSON:    &json,
+			JSON:    json,
 		},
 		rest:          []string{"POST", "http://localhost"},
 		isInteractive: false,
@@ -72,5 +73,19 @@ func TestParseOptions(t *testing.T) {
 			assert.Equal(t, json, v.Raw())
 			assert.Equal(t, "application/json", v.ContentType())
 		}
+	}
+}
+
+func TestParseOptionsBasicNoPassword(t *testing.T) {
+	c := cmdArgs{
+		flags: cmdFlags{
+			Basic: "user",
+		},
+		rest: []string{"http://localhost"},
+	}
+	opts, err := parseOptions(&c)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "user", opts.Basic.User)
+		assert.Equal(t, "", opts.Basic.Password)
 	}
 }

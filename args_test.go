@@ -108,7 +108,7 @@ func TestParseArgsJSON(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Empty(t, cmdArgs.rest)
 		assert.NotNil(t, cmdArgs.flags.JSON)
-		assert.Equal(t, `{"user": "u", "password": "p"}`, *cmdArgs.flags.JSON)
+		assert.Equal(t, `{"user": "u", "password": "p"}`, cmdArgs.flags.JSON)
 	}
 
 	args = []string{"gurl", "--json", `{"user": "u", "password": "p"}`}
@@ -116,7 +116,7 @@ func TestParseArgsJSON(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Empty(t, cmdArgs.rest)
 		assert.NotNil(t, cmdArgs.flags.JSON)
-		assert.Equal(t, `{"user": "u", "password": "p"}`, *cmdArgs.flags.JSON)
+		assert.Equal(t, `{"user": "u", "password": "p"}`, cmdArgs.flags.JSON)
 	}
 }
 
@@ -126,7 +126,7 @@ func TestParseArgsXML(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Empty(t, cmdArgs.rest)
 		assert.NotNil(t, cmdArgs.flags.XML)
-		assert.Equal(t, `<user>u</user><password>p</password>`, *cmdArgs.flags.XML)
+		assert.Equal(t, `<user>u</user><password>p</password>`, cmdArgs.flags.XML)
 	}
 
 	args = []string{"gurl", "--xml", `<user>u</user><password>p</password>`}
@@ -134,7 +134,7 @@ func TestParseArgsXML(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Empty(t, cmdArgs.rest)
 		assert.NotNil(t, cmdArgs.flags.XML)
-		assert.Equal(t, `<user>u</user><password>p</password>`, *cmdArgs.flags.XML)
+		assert.Equal(t, `<user>u</user><password>p</password>`, cmdArgs.flags.XML)
 	}
 }
 

@@ -89,11 +89,11 @@ func parseOptions(cmdArgs *cmdArgs) (*Options, error) {
 	}
 
 	var body BodyData
-	if cmdArgs.flags.JSON != nil {
-		json := JSONData(*cmdArgs.flags.JSON)
+	if len(cmdArgs.flags.JSON) > 0 {
+		json := JSONData(cmdArgs.flags.JSON)
 		body = &json
-	} else if cmdArgs.flags.XML != nil {
-		xml := XMLData(*cmdArgs.flags.XML)
+	} else if len(cmdArgs.flags.XML) > 0 {
+		xml := XMLData(cmdArgs.flags.XML)
 		body = &xml
 	} else if cmdArgs.flags.Form != nil {
 		v, err := splitKVs(cmdArgs.flags.Form, ":")
@@ -114,9 +114,11 @@ func parseOptions(cmdArgs *cmdArgs) (*Options, error) {
 
 	var b *Basic
 	if len(cmdArgs.flags.Basic) > 0 {
-		user, pass, err := split(cmdArgs.flags.Basic, ":")
-		if err != nil {
-			return nil, err
+		var user, pass string
+		kvs := strings.Split(cmdArgs.flags.Basic, ":")
+		user = kvs[0]
+		if len(kvs) > 1 {
+			pass = kvs[1]
 		}
 		b = &Basic{
 			User:     user,

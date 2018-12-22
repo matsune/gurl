@@ -29,6 +29,15 @@ func Run(args []string) int {
 		return exitError
 	}
 
+	if opts.Basic != nil && len(opts.Basic.Password) == 0 {
+		p, err := inputPassword()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return exitError
+		}
+		opts.Basic.Password = p
+	}
+
 	if cmdArgs.isInteractive {
 		err = runInteractive(opts, cmdArgs.flags.OutOneline)
 	} else {

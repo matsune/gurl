@@ -34,22 +34,24 @@ func runInteractive(opts *Options, outOneline bool) error {
 		opts.URL = url
 	}
 
-	idx, err := selectItem("Authorization", []string{"None", "Basic Auth"})
-	if err != nil {
-		return err
-	}
-	if idx == 1 {
-		u, err := inputUser()
+	if opts.Basic != nil && len(opts.Basic.User) == 0 && len(opts.Basic.User) == 0 {
+		idx, err := selectItem("Authorization", []string{"None", "Basic Auth"})
 		if err != nil {
 			return err
 		}
-		p, err := inputPassword()
-		if err != nil {
-			return err
-		}
-		opts.Basic = &Basic{
-			User:     u,
-			Password: p,
+		if idx == 1 {
+			u, err := inputUser()
+			if err != nil {
+				return err
+			}
+			p, err := inputPassword()
+			if err != nil {
+				return err
+			}
+			opts.Basic = &Basic{
+				User:     u,
+				Password: p,
+			}
 		}
 	}
 
@@ -80,7 +82,7 @@ func runInteractive(opts *Options, outOneline bool) error {
 	}
 
 	if opts.Body == nil {
-		idx, err = selectItem("Data", []string{"None", "JSON", "XML", "Form"})
+		idx, err := selectItem("Data", []string{"None", "JSON", "XML", "Form"})
 		if err != nil {
 			return err
 		}

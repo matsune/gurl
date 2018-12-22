@@ -12,8 +12,8 @@ type cmdFlags struct {
 	OutOneline  bool     `short:"o" long:"out-oneline" description:"Output oneline command (only interactive mode)"`
 	Basic       string   `short:"u" long:"user" description:"Basic auth <user[:password]>"`
 	Headers     []string `short:"H" long:"header" description:"Extra header <key:value>"`
-	JSON        *string  `short:"j" long:"json" description:"JSON data"`
-	XML         *string  `short:"x" long:"xml" description:"XML data"`
+	JSON        string   `short:"j" long:"json" description:"JSON data"`
+	XML         string   `short:"x" long:"xml" description:"XML data"`
 	Form        []string `short:"f" long:"form" description:"Form URL Encoded data <key:value>"`
 }
 
