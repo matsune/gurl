@@ -2,6 +2,7 @@ package gurl
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -69,13 +70,13 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 	for _, arg := range args {
 		if isURL(arg) {
 			if len(_url) > 0 {
-				err = fmt.Errorf("has multiple URLs")
+				err = fmt.Errorf("has multiple URLs: '%s %s'", _url, arg)
 				return nil, err
 			}
 			_url = arg
 		} else if isMethod(arg) {
 			if len(method) > 0 {
-				err = fmt.Errorf("has multiple methods")
+				err = fmt.Errorf("has multiple methods: '%s %s'", method, arg)
 				return nil, err
 			}
 			method = strings.ToUpper(arg)
@@ -88,11 +89,7 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 	interactiveMode = len(args) == 0 || f.Interactive
 
 	if !interactiveMode && len(_url) == 0 {
-		return nil, fmt.Errorf("no url")
-	}
-
-	if !interactiveMode && len(method) == 0 {
-		method = "GET"
+		return nil, fmt.Errorf("no URL")
 	}
 
 	header, err := splitKVs(f.Headers, ":")
@@ -114,6 +111,14 @@ func parseOptions(f *Flags, args []string) (*Options, error) {
 		}
 		b := EncodedData(v)
 		body = &b
+	}
+
+	if !interactiveMode && len(method) == 0 {
+		if body == nil {
+			method = http.MethodGet
+		} else {
+			method = http.MethodPost
+		}
 	}
 
 	opts := Options{

@@ -38,7 +38,7 @@ func isMethod(s string) bool {
 func split(str, sep string) (key, value string, err error) {
 	kvs := strings.Split(str, sep)
 	if len(kvs) != 2 {
-		err = fmt.Errorf("invalid key%svalue format %s", sep, str)
+		err = fmt.Errorf("invalid format '%s', please use 'key%svalue'.", str, sep)
 		return
 	}
 	key = kvs[0]
