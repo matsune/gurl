@@ -24,7 +24,7 @@ type (
 	}
 )
 
-func DefaultRenderer() *Renderer {
+func NewRenderer() *Renderer {
 	return &Renderer{
 		Status: DefaultStatusRender,
 		Header: DefaultHeaderRender,

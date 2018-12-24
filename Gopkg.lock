@@ -2,31 +2,10 @@
 
 
 [[projects]]
-  name = "github.com/alecthomas/gometalinter"
+  name = "github.com/AlecAivazis/survey"
   packages = ["."]
-  revision = "102ac984005d45456a7e3ae6dc94ebcd95c2bb19"
-  version = "v2.0.12"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/alecthomas/units"
-  packages = ["."]
-  revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/chzyer/readline"
-  packages = ["."]
-  revision = "2972be24d48e78746da79ba8e24e8b488c9880de"
-
-[[projects]]
-  name = "github.com/client9/misspell"
-  packages = [
-    ".",
-    "cmd/misspell"
-  ]
-  revision = "b90dc15cfd220ecf8bbc9043ecb928cef381f011"
-  version = "v0.3.4"
+  revision = "e205523512c83e9236698dbe7eb9649ec56e80ca"
+  version = "v1.7.1"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -47,27 +26,6 @@
   revision = "0315779074c2c4d1a4c459fdc5ead14f2043ffe5"
 
 [[projects]]
-  branch = "travis-1.9"
-  name = "github.com/golang/lint"
-  packages = [
-    ".",
-    "golint"
-  ]
-  revision = "883fe33ffc4344bad1ecd881f61afd5ec5d80e0a"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/google/shlex"
-  packages = ["."]
-  revision = "c34317bd91bf98fab745d77b03933cf8769299fe"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/gordonklaus/ineffassign"
-  packages = ["."]
-  revision = "1003c8bd00dc2869cb5ca5282e6ce33834fed514"
-
-[[projects]]
   name = "github.com/jessevdk/go-flags"
   packages = ["."]
   revision = "c6ca198ec95c841fdb89fc0de7496fed11ab854e"
@@ -75,28 +33,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/juju/ansiterm"
-  packages = [
-    ".",
-    "tabwriter"
-  ]
-  revision = "720a0952cc2ac777afc295d9861263e2a4cf96a1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/lunixbochs/vtclean"
+  name = "github.com/kballard/go-shellquote"
   packages = ["."]
-  revision = "2d01aacdc34a083dca635ba869909f5fc0cd4f41"
-
-[[projects]]
-  name = "github.com/manifoldco/promptui"
-  packages = [
-    ".",
-    "list",
-    "screenbuf"
-  ]
-  revision = "20f2a94120aa14a334121a6de66616a7fa89a5cd"
-  version = "v0.3.2"
+  revision = "95032a82bc518f77982ea72343cc1ade730072f0"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -111,21 +50,10 @@
   version = "v0.0.4"
 
 [[projects]]
-  name = "github.com/nicksnyder/go-i18n"
-  packages = [
-    "i18n",
-    "i18n/bundle",
-    "i18n/language",
-    "i18n/translation"
-  ]
-  revision = "0dc1626d56435e9d605a29875701721c54bc9bbd"
-  version = "v1.10.0"
-
-[[projects]]
-  name = "github.com/pelletier/go-toml"
+  branch = "master"
+  name = "github.com/mgutz/ansi"
   packages = ["."]
-  revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
-  version = "v1.2.0"
+  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -141,42 +69,22 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/tsenart/deadcode"
-  packages = ["."]
-  revision = "210d2dc333e90c7e3eedf4f2242507a8e83ed4ab"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "b00e65af1da0681cde6c8227839a0ca53bbf16bb"
 
 [[projects]]
-  branch = "master"
-  name = "golang.org/x/tools"
+  name = "gopkg.in/AlecAivazis/survey.v1"
   packages = [
-    "go/ast/astutil",
-    "go/gcexportdata",
-    "go/internal/gcimporter",
-    "go/types/typeutil"
+    "core",
+    "terminal"
   ]
-  revision = "537d06c362073e8c95164d0d4709059603cfdb02"
-
-[[projects]]
-  branch = "v3-unstable"
-  name = "gopkg.in/alecthomas/kingpin.v3-unstable"
-  packages = ["."]
-  revision = "df19058c872cddcd279411d709047160e543a700"
-
-[[projects]]
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
-  version = "v2.2.2"
+  revision = "e205523512c83e9236698dbe7eb9649ec56e80ca"
+  version = "v1.7.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "43668a55b9f1d5c4b81568eb8771dd5c064cd009ce1de01869ef6dfc3a707d47"
+  inputs-digest = "addda42cc5cd2406f480434faa9690c91dc3dc4855e891bca91d8cd74498dfb2"
   solver-name = "gps-cdcl"
   solver-version = 1

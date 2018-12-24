@@ -3,6 +3,8 @@ package gurl
 import (
 	"fmt"
 	"os"
+
+	"github.com/AlecAivazis/survey"
 )
 
 const gurlVersion = "1.0"
@@ -29,9 +31,13 @@ func Run(args []string) int {
 		return exitError
 	}
 
+	// show prompt if Basic auth option doesn't have password
 	if opts.Basic != nil && len(opts.Basic.Password) == 0 {
-		p, err := inputPassword()
-		if err != nil {
+		p := ""
+		s := &survey.Password{
+			Message: fmt.Sprintf("Password for user %s:", opts.Basic.User),
+		}
+		if err := survey.AskOne(s, &p, nil); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return exitError
 		}
@@ -39,18 +45,30 @@ func Run(args []string) int {
 	}
 
 	if cmdArgs.isInteractive {
-		err = runInteractive(opts, cmdArgs.flags.OutOneline)
-	} else {
-		err = runOneline(opts)
+		if err = runInteractive(opts); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return exitError
+		}
 	}
-	if err != nil {
+
+	if err := run(opts); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return exitError
 	}
+
+	if cmdArgs.flags.OutOneline {
+		str, err := opts.outputOneline()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return exitError
+		}
+		fmt.Print(str)
+	}
+
 	return exitOK
 }
 
-func runOneline(opts *Options) error {
+func run(opts *Options) error {
 	g, err := New(opts)
 	if err != nil {
 		return err

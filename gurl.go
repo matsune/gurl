@@ -22,7 +22,7 @@ func New(opts *Options) (*Gurl, error) {
 	return &Gurl{
 		Req:      req,
 		Res:      nil,
-		Renderer: *DefaultRenderer(),
+		Renderer: *NewRenderer(),
 	}, nil
 }
 

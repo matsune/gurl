@@ -1,180 +1,58 @@
 package gurl
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
-	"strings"
 
-	"github.com/manifoldco/promptui"
+	"github.com/AlecAivazis/survey"
 )
 
 const editor = "vim"
 
-func runInteractive(opts *Options, outOneline bool) error {
-	if len(opts.Method) == 0 {
-		m, err := selectMethod()
-		if err != nil {
-			return err
-		}
-		opts.Method = m
+func runInteractive(opts *Options) error {
+
+	if err := selectMethod(opts); err != nil {
+		return err
 	}
 
-	if len(opts.URL) == 0 {
-		url, err := inputURL()
-		if err != nil {
-			return err
-		}
-		opts.URL = url
+	if err := inputURL(opts); err != nil {
+		return err
 	}
 
-	if opts.Basic != nil && len(opts.Basic.User) == 0 && len(opts.Basic.User) == 0 {
-		idx, err := selectItem("Authorization", []string{"None", "Basic Auth"})
-		if err != nil {
-			return err
-		}
-		if idx == 1 {
-			u, err := inputUser()
-			if err != nil {
-				return err
-			}
-			p, err := inputPassword()
-			if err != nil {
-				return err
-			}
-			opts.Basic = &Basic{
-				User:     u,
-				Password: p,
-			}
-		}
+	if err := inputBasic(opts); err != nil {
+		return err
 	}
 
-	for {
-		prompt := promptui.Select{
-			Label: "Header",
-			Items: []string{"End", "Add"},
-			Templates: &promptui.SelectTemplates{
-				Selected: fmt.Sprintf(``),
-			},
-		}
-
-		idx, _, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-
-		if idx == 0 {
-			break
-		}
-
-		k, v, err := inputKeyValue()
-		if err != nil {
-			return nil
-		}
-
-		opts.CustomHeader.Add(k, v)
+	if err := inputHeaders(opts); err != nil {
+		return err
 	}
 
-	if opts.Body == nil {
-		idx, err := selectItem("Data", []string{"None", "JSON", "XML", "Form"})
-		if err != nil {
-			return err
-		}
-
-		if idx == 1 {
-			str, err := openEditor()
-			if err != nil {
-				return err
-			}
-			opts.Body = JSONData(str)
-		} else if idx == 2 {
-			str, err := openEditor()
-			if err != nil {
-				return err
-			}
-			opts.Body = XMLData(str)
-		} else if idx == 3 {
-			e := url.Values{}
-			for {
-				idx, err = selectItem("FormData", []string{"End", "Add"})
-				if err != nil {
-					return err
-				}
-				if idx == 0 {
-					break
-				}
-				k, v, err := inputKeyValue()
-				if err != nil {
-					return nil
-				}
-				e.Set(k, v)
-			}
-			opts.Body = EncodedData(e)
-		}
+	if err := inputBody(opts); err != nil {
+		return err
 	}
 
 	fmt.Println()
 
-	g, err := New(opts)
-	if err != nil {
-		return err
-	}
-
-	if err := g.DoRequest(); err != nil {
-		return err
-	}
-
-	err = g.Render()
-	if err != nil {
-		return err
-	}
-
-	if outOneline {
-		return outputOneline(opts)
-	}
-
 	return nil
 }
 
-func openEditor() (string, error) {
-	tmpFile := fmt.Sprintf("gurl.%s.tmp", randString(5))
-
-	file, err := os.Create(tmpFile)
+func selectMethod(opts *Options) error {
+	if len(opts.Method) > 0 {
+		return nil
+	}
+	m, err := _selectMethod()
 	if err != nil {
-		return "", err
+		return err
 	}
-	file.Close()
-
-	cmd := exec.Command(editor, tmpFile)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	if err = cmd.Run(); err != nil {
-		return "", err
-	}
-
-	file, err = os.OpenFile(tmpFile, os.O_RDONLY, 0600)
-	if err != nil {
-		return "", nil
-	}
-	bytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		file.Close()
-		return "", nil
-	}
-	file.Close()
-	if err = os.Remove(tmpFile); err != nil {
-		return "", err
-	}
-	return string(bytes), nil
+	opts.Method = m
+	return nil
 }
 
-func selectMethod() (string, error) {
+func _selectMethod() (string, error) {
 	methods := []string{
 		http.MethodGet,
 		http.MethodHead,
@@ -186,134 +64,236 @@ func selectMethod() (string, error) {
 		http.MethodOptions,
 		http.MethodTrace,
 	}
-	idx, err := selectItem("Method", methods)
-	return methods[idx], err
+	p := &survey.Select{
+		Message: "Choose method:",
+		Options: methods,
+	}
+	var res string
+	err := survey.AskOne(p, &res, nil)
+	return res, err
 }
 
-func inputURL() (string, error) {
-	validate := func(input string) error {
-		if !isURL(input) {
-			return errors.New("not url")
+func inputURL(opts *Options) error {
+	if len(opts.URL) > 0 {
+		return nil
+	}
+
+	url, err := _inputURL()
+	if err != nil {
+		return err
+	}
+	opts.URL = url
+	return nil
+}
+
+func _inputURL() (string, error) {
+	var res string
+	p := &survey.Input{
+		Message: "URL",
+	}
+	v := func(res interface{}) error {
+		if v, ok := res.(string); !ok || !isURL(v) {
+			return fmt.Errorf("not URL")
 		}
 		return nil
 	}
-	templates := &promptui.PromptTemplates{
-		Success: fmt.Sprintf(`{{ "%s" | green }} {{ . }}: `, promptui.IconGood),
-	}
-
-	prompt := promptui.Prompt{
-		Label:     "URL",
-		Validate:  validate,
-		Templates: templates,
-	}
-	return prompt.Run()
+	err := survey.AskOne(p, &res, v)
+	return res, err
 }
 
-func selectItem(label string, items []string) (int, error) {
-	prompt := promptui.Select{
-		Label: label,
-		Items: items,
-		Templates: &promptui.SelectTemplates{
-			Selected: fmt.Sprintf(`{{ "%s" | green }} %s: {{ . }}`, promptui.IconGood, label),
-		},
+func inputBasic(opts *Options) error {
+	if opts.Basic != nil && len(opts.Basic.User) > 0 && len(opts.Basic.Password) > 0 {
+		return nil
 	}
 
-	idx, _, err := prompt.Run()
+	if opts.Basic == nil {
+		res := false
+		prompt := &survey.Confirm{
+			Message: "Use Basic Authorization?",
+		}
+		if err := survey.AskOne(prompt, &res, nil); err != nil {
+			return err
+		}
+		if res {
+			opts.Basic = &Basic{}
+		} else {
+			return nil
+		}
+	}
+
+	if len(opts.Basic.User) == 0 {
+		user := ""
+		p := &survey.Input{
+			Message: "User",
+		}
+		if err := survey.AskOne(p, &user, nil); err != nil {
+			return err
+		}
+		opts.Basic.User = user
+	}
+
+	if len(opts.Basic.Password) == 0 {
+		password := ""
+		p := &survey.Password{
+			Message: fmt.Sprintf("Password for user %s:", opts.Basic.User),
+		}
+		if err := survey.AskOne(p, &password, nil); err != nil {
+			return err
+		}
+		opts.Basic.Password = password
+	}
+	return nil
+}
+
+func inputHeaders(opts *Options) error {
+	for {
+		res := false
+		c := &survey.Confirm{
+			Message: "Add custom header?",
+		}
+		if err := survey.AskOne(c, &res, nil); err != nil {
+			return err
+		}
+		if !res {
+			return nil
+		}
+
+		k, v, err := inputKeyValue()
+		if err != nil {
+			return err
+		}
+		opts.CustomHeader.Add(k, v)
+	}
+	return nil
+}
+
+func inputBody(opts *Options) error {
+	if opts.Body != nil {
+		return nil
+	}
+
+	const (
+		none = "None"
+		json = "JSON"
+		xml  = "XML"
+		form = "Form"
+	)
+	options := []string{none, json, xml, form}
+	d := ""
+	p := &survey.Select{
+		Message: "Body:",
+		Options: options,
+	}
+	if err := survey.AskOne(p, &d, nil); err != nil {
+		return err
+	}
+
+	var err error
+	switch d {
+	case json:
+		err = inputJSON(opts)
+	case xml:
+		err = inputXML(opts)
+	case form:
+		err = inputForm(opts)
+	default:
+		break
+	}
+	return err
+}
+
+func inputJSON(opts *Options) error {
+	str, err := openEditor()
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return idx, nil
+	opts.Body = JSONData(str)
+	return nil
 }
 
-func inputUser() (string, error) {
-	prompt := promptui.Prompt{
-		Label: "user",
-		Templates: &promptui.PromptTemplates{
-			Success: fmt.Sprint(`{{ . }}: `),
-		},
+func inputXML(opts *Options) error {
+	str, err := openEditor()
+	if err != nil {
+		return err
 	}
-	return prompt.Run()
+	opts.Body = XMLData(str)
+	return nil
 }
 
-func inputPassword() (string, error) {
-	prompt := promptui.Prompt{
-		Label: "password",
-		Mask:  '*',
-		Templates: &promptui.PromptTemplates{
-			Success: fmt.Sprint(`{{ . }}: `),
-		},
+func inputForm(opts *Options) error {
+	e := url.Values{}
+
+	k, v, err := inputKeyValue()
+	if err != nil {
+		return err
 	}
-	return prompt.Run()
+	e.Set(k, v)
+
+	for {
+		res := false
+		c := &survey.Confirm{
+			Message: "Add more form data?",
+		}
+		if err := survey.AskOne(c, &res, nil); err != nil {
+			return err
+		}
+
+		if !res {
+			break
+		}
+
+		k, v, err := inputKeyValue()
+		if err != nil {
+			return err
+		}
+		e.Set(k, v)
+	}
+	opts.Body = EncodedData(e)
+	return nil
 }
 
 func inputKeyValue() (string, string, error) {
-	prompt := promptui.Prompt{
-		Label: "Key",
-		Templates: &promptui.PromptTemplates{
-			Success: fmt.Sprint(`{{ . }}: `),
-		},
+	k := ""
+	p := &survey.Input{
+		Message: "Key:",
 	}
-	k, err := prompt.Run()
-	if err != nil {
+	if err := survey.AskOne(p, &k, nil); err != nil {
 		return "", "", err
 	}
-	prompt = promptui.Prompt{
-		Label: "Value",
-		Templates: &promptui.PromptTemplates{
-			Success: fmt.Sprint(`{{ . }}: `),
-		},
+
+	v := ""
+	p = &survey.Input{
+		Message: "Value:",
 	}
-	v, err := prompt.Run()
-	if err != nil {
+	if err := survey.AskOne(p, &v, nil); err != nil {
 		return "", "", err
 	}
 	return k, v, nil
 }
 
-func outputOneline(opts *Options) error {
-	path := os.Args[0]
-	m := opts.Method
-	url := opts.URL
+func openEditor() (string, error) {
+	tmp, err := ioutil.TempFile("", "gurl")
+	if err != nil {
+		return "", err
+	}
+	tmp.Close()
 
-	args := []string{path, m, url}
-
-	if opts.Basic != nil {
-		u := fmt.Sprintf("-u %s:%s", opts.Basic.User, opts.Basic.Password)
-		args = append(args, u)
+	cmd := exec.Command(editor, tmp.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	if err = cmd.Run(); err != nil {
+		return "", err
 	}
 
-	if len(opts.CustomHeader) != 0 {
-		var h string
-		for k, arr := range opts.CustomHeader {
-			for _, v := range arr {
-				h += fmt.Sprintf("-H %s=%s ", k, v)
-			}
-		}
-		args = append(args, h)
+	tmp, err = os.OpenFile(tmp.Name(), os.O_RDONLY, 0600)
+	if err != nil {
+		return "", nil
 	}
+	defer os.Remove(tmp.Name())
 
-	if opts.Body != nil {
-		var d string
-		switch v := opts.Body.(type) {
-		case JSONData:
-			buf := new(bytes.Buffer)
-			if err := json.Compact(buf, []byte(v)); err != nil {
-				return err
-			}
-			d = fmt.Sprintf("-j '%s'", buf)
-		case XMLData:
-			d = fmt.Sprintf("-x '%s'", v)
-		case EncodedData:
-			for k, arr := range v {
-				for _, v := range arr {
-					d += fmt.Sprintf("-d %s=%s ", k, v)
-				}
-			}
-		}
-		args = append(args, d)
+	bytes, err := ioutil.ReadAll(tmp)
+	if err != nil {
+		return "", nil
 	}
-
-	fmt.Print(sectionStr("> one-liners"))
-	fmt.Println(strings.Join(args, " "))
-	return nil
+	return string(bytes), nil
 }
