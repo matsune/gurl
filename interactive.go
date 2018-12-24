@@ -89,7 +89,7 @@ func inputURL(opts *Options) error {
 func _inputURL() (string, error) {
 	var res string
 	p := &survey.Input{
-		Message: "URL",
+		Message: "URL:",
 	}
 	v := func(res interface{}) error {
 		if v, ok := res.(string); !ok || !isURL(v) {
