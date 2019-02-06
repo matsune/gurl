@@ -13,6 +13,17 @@ import (
 
 const editor = "vim"
 
+func askBasicPassword(user string) (string, error) {
+	p := ""
+	s := &survey.Password{
+		Message: fmt.Sprintf("Password for user %s:", user),
+	}
+	if err := survey.AskOne(s, &p, nil); err != nil {
+		return "", err
+	}
+	return p, nil
+}
+
 func runInteractive(opts *Options) error {
 
 	if err := selectMethod(opts); err != nil {
@@ -92,7 +103,7 @@ func _inputURL() (string, error) {
 		Message: "URL:",
 	}
 	v := func(res interface{}) error {
-		if _, ok := res.(string); !ok { //|| !isURL(v) {
+		if _, ok := res.(string); !ok {
 			return fmt.Errorf("not URL")
 		}
 		return nil

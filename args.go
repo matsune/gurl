@@ -11,22 +11,6 @@ type cmdArgs struct {
 	fields []string
 }
 
-func parseArgs(args []string) (*cmdArgs, error) {
-	if len(args) == 0 {
-		return nil, fmt.Errorf("args is empty")
-	}
-
-	f, rest, err := parseFlags(args)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cmdArgs{
-		flags:  f,
-		fields: rest,
-	}, nil
-}
-
 // command becomes interactive mode if args has -i flag or no args
 func (c cmdArgs) isInteractive() bool {
 	return c.flags.Interactive || len(c.fields) == 0

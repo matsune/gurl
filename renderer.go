@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/go-xmlfmt/xmlfmt"
@@ -32,6 +34,36 @@ func NewRenderer() *Renderer {
 		JSON:   JSONRender,
 		XML:    XMLRender,
 	}
+}
+
+func (r *Renderer) render(res *http.Response) error {
+	if r.Status != nil {
+		fmt.Print(r.Status(res.Status, res.StatusCode))
+	}
+
+	if r.Header != nil {
+		fmt.Print(r.Header(res.Header))
+	}
+
+	var bodyRender BodyRender
+	cType := res.Header.Get("Content-Type")
+	if strings.Contains(cType, "application/json") {
+		bodyRender = r.JSON
+	} else if strings.Contains(cType, "application/xml") {
+		bodyRender = r.XML
+	} else {
+		bodyRender = r.Plain
+	}
+
+	if bodyRender != nil {
+		defer res.Body.Close()
+		bodyBytes, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		fmt.Print(bodyRender(string(bodyBytes)))
+	}
+	return nil
 }
 
 func colorForStatus(code int) color.Attribute {
