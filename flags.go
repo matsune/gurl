@@ -27,6 +27,9 @@ func parseFlags(osArgs []string) (*cmdFlags, []string, error) {
 		return nil, nil, err
 	}
 
+	if len(args) < 1 {
+		return &f, []string{}, nil
+	}
 	return &f, args[1:], nil
 }
 
@@ -38,17 +41,17 @@ func (f cmdFlags) bodyData() (BodyData, error) {
 	var body BodyData
 	if len(f.JSON) > 0 {
 		json := JSONData(f.JSON)
-		body = &json
+		body = json
 	} else if len(f.XML) > 0 {
 		xml := XMLData(f.XML)
-		body = &xml
+		body = xml
 	} else if len(f.Form) > 0 {
 		v, err := splitKVs(f.Form)
 		if err != nil {
 			return nil, err
 		}
 		b := EncodedData(v)
-		body = &b
+		body = b
 	}
 	return body, nil
 }
