@@ -5,20 +5,34 @@ import (
 	"net/http"
 )
 
-const gurlVersion = "1.0"
-
-func printVersion() {
-	fmt.Printf("gurl version %s\n", gurlVersion)
+type App struct {
+	version  string
+	osArgs   []string
+	client   *http.Client
+	renderer *Renderer
 }
 
-func Run(osArgs []string) error {
-	flags, fields, err := parseFlags(osArgs)
+func New(osArgs []string, version string) *App {
+	return &App{
+		version:  version,
+		osArgs:   osArgs,
+		client:   new(http.Client),
+		renderer: NewRenderer(),
+	}
+}
+
+func (a *App) printVersion() {
+	fmt.Printf("gurl version %s\n", a.version)
+}
+
+func (a *App) Run() error {
+	flags, fields, err := parseFlags(a.osArgs)
 	if err != nil {
 		return err
 	}
 
 	if flags.Version {
-		printVersion()
+		a.printVersion()
 		return nil
 	}
 
@@ -52,14 +66,12 @@ func Run(osArgs []string) error {
 		return err
 	}
 
-	client := new(http.Client)
-	res, err := client.Do(req)
+	res, err := a.client.Do(req)
 	if err != nil {
 		return err
 	}
 
-	renderer := NewRenderer()
-	if err := renderer.render(res); err != nil {
+	if err := a.renderer.render(res); err != nil {
 		return err
 	}
 

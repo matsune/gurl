@@ -7,10 +7,13 @@ import (
 	"github.com/matsune/gurl"
 )
 
+const version = "1.0"
+
 func main() {
-	if err := gurl.Run(os.Args); err != nil {
+	app := gurl.New(os.Args, version)
+
+	if err := app.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	os.Exit(0)
 }
