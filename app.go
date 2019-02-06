@@ -26,6 +26,7 @@ func (a *App) printVersion() {
 }
 
 func (a *App) Run() error {
+	// parse flag options and others
 	flags, fields, err := parseFlags(a.osArgs)
 	if err != nil {
 		return err
@@ -36,12 +37,10 @@ func (a *App) Run() error {
 		return nil
 	}
 
-	args := cmdArgs{
-		flags:  flags,
-		fields: fields,
-	}
+	// becomes interactive mode if args has -i flag or no args
+	isInteractive := flags.Interactive || len(fields) == 0
 
-	opts, err := args.buildOptions()
+	opts, err := buildOptions(flags, fields, isInteractive)
 	if err != nil {
 		return err
 	}
@@ -55,7 +54,8 @@ func (a *App) Run() error {
 		opts.Basic.Password = p
 	}
 
-	if args.isInteractive() {
+	if isInteractive {
+		// start interactive prompt
 		if err = runInteractive(opts); err != nil {
 			return err
 		}

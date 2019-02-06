@@ -24,20 +24,57 @@ type (
 	}
 )
 
-func (opts *Options) buildHeader() *http.Header {
-	h := http.Header{}
-	for k, arr := range opts.CustomHeader {
-		for _, v := range arr {
-			h.Add(k, v)
+func buildOptions(flags *cmdFlags, fields []string, isInteractive bool) (*Options, error) {
+	// validate fields
+	var url, method string
+	for _, field := range fields {
+		if isMethod(field) {
+			if len(method) > 0 {
+				return nil, fmt.Errorf("multiple methods: '%s %s'", method, field)
+			}
+			method = strings.ToUpper(field)
+		} else {
+			if len(url) > 0 {
+				return nil, fmt.Errorf("multiple URLs: '%s %s'", url, field)
+			}
+			url = field
 		}
 	}
-	if opts.Body != nil {
-		h.Set("Content-Type", opts.Body.ContentType())
+
+	// URL is required if not interactive mode
+	if !isInteractive && len(url) == 0 {
+		return nil, fmt.Errorf("no URL")
 	}
-	if opts.Basic != nil {
-		h.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth(opts.Basic.User, opts.Basic.Password)))
+
+	header, err := flags.headers()
+	if err != nil {
+		return nil, err
 	}
-	return &h
+
+	body, err := flags.bodyData()
+	if err != nil {
+		return nil, err
+	}
+
+	if !isInteractive && len(method) == 0 {
+		if body == nil {
+			method = http.MethodGet
+		} else {
+			method = http.MethodPost
+		}
+	}
+
+	b := flags.basic()
+
+	opts := Options{
+		Method:       method,
+		URL:          url,
+		Basic:        b,
+		CustomHeader: header,
+		Body:         body,
+	}
+
+	return &opts, nil
 }
 
 func (opts *Options) buildRequest() (req *http.Request, err error) {
@@ -53,6 +90,22 @@ func (opts *Options) buildRequest() (req *http.Request, err error) {
 	}
 	req.Header = *opts.buildHeader()
 	return
+}
+
+func (opts *Options) buildHeader() *http.Header {
+	h := http.Header{}
+	for k, arr := range opts.CustomHeader {
+		for _, v := range arr {
+			h.Add(k, v)
+		}
+	}
+	if opts.Body != nil {
+		h.Set("Content-Type", opts.Body.ContentType())
+	}
+	if opts.Basic != nil {
+		h.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth(opts.Basic.User, opts.Basic.Password)))
+	}
+	return &h
 }
 
 func (opts *Options) outputOneline() (string, error) {
