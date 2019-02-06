@@ -1,185 +1,138 @@
 package gurl
 
 import (
+	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func TestParseArgsCmdName(t *testing.T) {
-	args := []string{"./gurl"}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Equal(t, args[0], cmdArgs.cmdName)
-		assert.Empty(t, cmdArgs.rest)
+func Test_parseArgs(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		want    *cmdArgs
+		wantErr bool
+	}{
+		{
+			name:    "nil",
+			args:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "empty",
+			args:    []string{},
+			wantErr: true,
+		},
+		{
+			name:    "unknown flag",
+			args:    []string{"gurl", "-z", "aaa"},
+			wantErr: true,
+		},
+		{
+			name: "no args",
+			args: []string{"gurl"},
+			want: &cmdArgs{flags: &cmdFlags{}, fields: []string{}},
+		},
+		{
+			name: "1 arg",
+			args: []string{"gurl", "a"},
+			want: &cmdArgs{flags: &cmdFlags{}, fields: []string{"a"}},
+		},
+		{
+			name: "2 args",
+			args: []string{"gurl", "a", "b"},
+			want: &cmdArgs{flags: &cmdFlags{}, fields: []string{"a", "b"}},
+		},
+		{
+			name: "3 args",
+			args: []string{"gurl", "a", "b", "c"},
+			want: &cmdArgs{flags: &cmdFlags{}, fields: []string{"a", "b", "c"}},
+		},
+		{
+			name: "version short flag",
+			args: []string{"gurl", "-v"},
+			want: &cmdArgs{flags: &cmdFlags{Version: true}, fields: []string{}},
+		},
+		{
+			name: "version long flag",
+			args: []string{"gurl", "--version"},
+			want: &cmdArgs{flags: &cmdFlags{Version: true}, fields: []string{}},
+		},
+		{
+			name: "interactive short flag",
+			args: []string{"gurl", "-i"},
+			want: &cmdArgs{flags: &cmdFlags{Interactive: true}, fields: []string{}},
+		},
+		{
+			name: "interactive long flag",
+			args: []string{"gurl", "--interactive"},
+			want: &cmdArgs{flags: &cmdFlags{Interactive: true}, fields: []string{}},
+		},
+		{
+			name: "oneline short flag",
+			args: []string{"gurl", "-o"},
+			want: &cmdArgs{flags: &cmdFlags{Oneline: true}, fields: []string{}},
+		},
+		{
+			name: "oneline long flag",
+			args: []string{"gurl", "--oneline"},
+			want: &cmdArgs{flags: &cmdFlags{Oneline: true}, fields: []string{}},
+		},
+		{
+			name: "basic key value flag",
+			args: []string{"gurl", "-u", "user:pass"},
+			want: &cmdArgs{flags: &cmdFlags{Basic: "user:pass"}, fields: []string{}},
+		},
+		{
+			name: "1 header key-value flag",
+			args: []string{"gurl", "-H", "key:val"},
+			want: &cmdArgs{flags: &cmdFlags{Headers: []string{"key:val"}}, fields: []string{}},
+		},
+		{
+			name: "2 header key-values flag",
+			args: []string{"gurl", "--header", "key1:val1", "-H", "key2:val2"},
+			want: &cmdArgs{flags: &cmdFlags{Headers: []string{"key1:val1", "key2:val2"}}, fields: []string{}},
+		},
+		{
+			name: "json short flag",
+			args: []string{"gurl", "-j", "{'a':'b'}"},
+			want: &cmdArgs{flags: &cmdFlags{JSON: "{'a':'b'}"}, fields: []string{}},
+		},
+		{
+			name: "json long flag",
+			args: []string{"gurl", "--json", "{'a':'b'}"},
+			want: &cmdArgs{flags: &cmdFlags{JSON: "{'a':'b'}"}, fields: []string{}},
+		},
+		{
+			name: "xml short flag",
+			args: []string{"gurl", "-x", "<a><b></b></a>"},
+			want: &cmdArgs{flags: &cmdFlags{XML: "<a><b></b></a>"}, fields: []string{}},
+		},
+		{
+			name: "xml long flag",
+			args: []string{"gurl", "--xml", "<a><b></b></a>"},
+			want: &cmdArgs{flags: &cmdFlags{XML: "<a><b></b></a>"}, fields: []string{}},
+		},
+		{
+			name: "1 form key-value flag",
+			args: []string{"gurl", "-f", "key:val"},
+			want: &cmdArgs{flags: &cmdFlags{Form: []string{"key:val"}}, fields: []string{}},
+		},
+		{
+			name: "2 form key-values flag",
+			args: []string{"gurl", "--form", "key1:val1", "-f", "key2:val2"},
+			want: &cmdArgs{flags: &cmdFlags{Form: []string{"key1:val1", "key2:val2"}}, fields: []string{}},
+		},
 	}
-}
-
-func TestParseArgsVersion(t *testing.T) {
-	args := []string{"./gurl", "-v"}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.True(t, cmdArgs.flags.Version)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseArgs(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseArgs() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseArgs() = %v, want %v", got, tt.want)
+			}
+		})
 	}
-
-	args = []string{"./gurl", "--version"}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.True(t, cmdArgs.flags.Version)
-	}
-}
-
-func TestParseArgsInteractive(t *testing.T) {
-	args := []string{"./gurl", "-i"}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.True(t, cmdArgs.isInteractive)
-	}
-
-	args = []string{"./gurl", "--interactive"}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.True(t, cmdArgs.isInteractive)
-	}
-}
-
-func TestParseArgsOutOneline(t *testing.T) {
-	args := []string{"./gurl", "-o"}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.True(t, cmdArgs.flags.OutOneline)
-	}
-
-	args = []string{"./gurl", "--out-oneline"}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.True(t, cmdArgs.flags.OutOneline)
-	}
-}
-
-func TestParseArgsBasic(t *testing.T) {
-	args := []string{"gurl", "-u=user"}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.Equal(t, "user", cmdArgs.flags.Basic)
-	}
-
-	args = []string{"gurl", "-u=user:pass"}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.Equal(t, "user:pass", cmdArgs.flags.Basic)
-	}
-
-	args = []string{"gurl", "--user=user:pass"}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.Equal(t, "user:pass", cmdArgs.flags.Basic)
-	}
-}
-
-func TestParseArgsHeader(t *testing.T) {
-	args := []string{"gurl", "-H", "A:B", "-H", "c:d"}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.ElementsMatch(t, []string{"A:B", "c:d"}, cmdArgs.flags.Headers)
-	}
-
-	args = []string{"gurl", "--header=A:B", `--header="'c:':'d:'"`}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.ElementsMatch(t, []string{"A:B", `'c:':'d:'`}, cmdArgs.flags.Headers)
-	}
-}
-
-func TestParseArgsJSON(t *testing.T) {
-	args := []string{"gurl", "-j", `{"user": "u", "password": "p"}`}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.NotNil(t, cmdArgs.flags.JSON)
-		assert.Equal(t, `{"user": "u", "password": "p"}`, cmdArgs.flags.JSON)
-	}
-
-	args = []string{"gurl", "--json", `{"user": "u", "password": "p"}`}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.NotNil(t, cmdArgs.flags.JSON)
-		assert.Equal(t, `{"user": "u", "password": "p"}`, cmdArgs.flags.JSON)
-	}
-}
-
-func TestParseArgsXML(t *testing.T) {
-	args := []string{"gurl", "-x", `<user>u</user><password>p</password>`}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.NotNil(t, cmdArgs.flags.XML)
-		assert.Equal(t, `<user>u</user><password>p</password>`, cmdArgs.flags.XML)
-	}
-
-	args = []string{"gurl", "--xml", `<user>u</user><password>p</password>`}
-	cmdArgs, err = parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.NotNil(t, cmdArgs.flags.XML)
-		assert.Equal(t, `<user>u</user><password>p</password>`, cmdArgs.flags.XML)
-	}
-}
-
-func TestParseArgsForm(t *testing.T) {
-	args := []string{"gurl", "-f", "user:u", "--form=password:p"}
-	cmdArgs, err := parseArgs(args)
-	if assert.NoError(t, err) {
-		assert.Empty(t, cmdArgs.rest)
-		assert.ElementsMatch(t, []string{"user:u", "password:p"}, cmdArgs.flags.Form)
-	}
-}
-
-// Fail cases
-
-func TestParseArgsEmpty(t *testing.T) {
-	args := []string{}
-	_, err := parseArgs(args)
-	assert.Error(t, err)
-}
-
-func TestParseArgsBasicFail(t *testing.T) {
-	args := []string{"gurl", "--user"}
-	_, err := parseArgs(args)
-	assert.Error(t, err)
-}
-func TestParseArgsHeaderFail(t *testing.T) {
-	args := []string{"gurl", "-H"}
-	_, err := parseArgs(args)
-	assert.Error(t, err)
-}
-
-func TestParseArgsJSONFail(t *testing.T) {
-	args := []string{"gurl", "--json"}
-	_, err := parseArgs(args)
-	assert.Error(t, err)
-}
-
-func TestParseArgsXMLFail(t *testing.T) {
-	args := []string{"gurl", "--xml"}
-	_, err := parseArgs(args)
-	assert.Error(t, err)
-}
-
-func TestParseArgsEncodedFail(t *testing.T) {
-	args := []string{"gurl", "--data"}
-	_, err := parseArgs(args)
-	assert.Error(t, err)
 }

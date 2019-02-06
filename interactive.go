@@ -92,7 +92,7 @@ func _inputURL() (string, error) {
 		Message: "URL:",
 	}
 	v := func(res interface{}) error {
-		if v, ok := res.(string); !ok || !isURL(v) {
+		if _, ok := res.(string); !ok { //|| !isURL(v) {
 			return fmt.Errorf("not URL")
 		}
 		return nil

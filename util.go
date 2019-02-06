@@ -4,15 +4,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
-func isURL(s string) bool {
-	_, err := url.ParseRequestURI(s)
-	return err == nil
-}
-
+// ignore upper and lower case
 func isMethod(s string) bool {
 	m := strings.ToUpper(s)
 	methods := []string{
@@ -34,10 +29,10 @@ func isMethod(s string) bool {
 	return false
 }
 
-func split(str, sep string) (key, value string, err error) {
-	kvs := strings.Split(str, sep)
+func splitKV(str string) (key, value string, err error) {
+	kvs := strings.Split(str, ":")
 	if len(kvs) != 2 {
-		err = fmt.Errorf("invalid format '%s', please use 'key%svalue'.", str, sep)
+		err = fmt.Errorf("invalid key:value format: %s", str)
 		return
 	}
 	key = kvs[0]
@@ -45,10 +40,10 @@ func split(str, sep string) (key, value string, err error) {
 	return
 }
 
-func splitKVs(kvs []string, sep string) (map[string][]string, error) {
-	m := make(map[string][]string)
+func splitKVs(kvs []string) (map[string][]string, error) {
+	m := map[string][]string{}
 	for _, kv := range kvs {
-		k, v, err := split(kv, sep)
+		k, v, err := splitKV(kv)
 		if err != nil {
 			return nil, err
 		}

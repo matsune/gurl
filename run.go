@@ -2,33 +2,31 @@ package gurl
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/AlecAivazis/survey"
 )
 
 const gurlVersion = "1.0"
 
-const (
-	exitOK = iota
-	exitError
-)
+func printVersion() {
+	fmt.Printf("gurl version %s\n", gurlVersion)
+}
 
-func Run(args []string) int {
-	cmdArgs, err := parseArgs(args)
+func Run(osArgs []string) error {
+	// parse flags and fields
+	cmdArgs, err := parseArgs(osArgs)
 	if err != nil {
-		return exitError
+		return err
 	}
 
 	if cmdArgs.flags.Version {
-		fmt.Printf("gurl version %s\n", gurlVersion)
-		return exitOK
+		printVersion()
+		return nil
 	}
 
-	opts, err := parseOptions(cmdArgs)
+	opts, err := cmdArgs.buildOptions()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return exitError
+		return err
 	}
 
 	// show prompt if Basic auth option doesn't have password
@@ -38,34 +36,30 @@ func Run(args []string) int {
 			Message: fmt.Sprintf("Password for user %s:", opts.Basic.User),
 		}
 		if err := survey.AskOne(s, &p, nil); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return exitError
+			return err
 		}
 		opts.Basic.Password = p
 	}
 
-	if cmdArgs.isInteractive {
+	if cmdArgs.isInteractive() {
 		if err = runInteractive(opts); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return exitError
+			return err
 		}
 	}
 
 	if err := run(opts); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return exitError
+		return err
 	}
 
-	if cmdArgs.flags.OutOneline {
+	if cmdArgs.flags.Oneline {
 		str, err := opts.outputOneline()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return exitError
+			return err
 		}
 		fmt.Print(str)
 	}
 
-	return exitOK
+	return nil
 }
 
 func run(opts *Options) error {

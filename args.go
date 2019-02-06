@@ -2,26 +2,13 @@ package gurl
 
 import (
 	"fmt"
-
-	flags "github.com/jessevdk/go-flags"
+	"net/http"
+	"strings"
 )
 
-type cmdFlags struct {
-	Version     bool     `short:"v" long:"version" description:"Show version"`
-	Interactive bool     `short:"i" long:"interactive" description:"Interactive mode"`
-	OutOneline  bool     `short:"o" long:"out-oneline" description:"Output oneline command (only interactive mode)"`
-	Basic       string   `short:"u" long:"user" description:"Basic auth <user[:password]>"`
-	Headers     []string `short:"H" long:"header" description:"Extra header <key:value>"`
-	JSON        string   `short:"j" long:"json" description:"JSON data"`
-	XML         string   `short:"x" long:"xml" description:"XML data"`
-	Form        []string `short:"f" long:"form" description:"Form URL Encoded data <key:value>"`
-}
-
 type cmdArgs struct {
-	cmdName       string
-	flags         cmdFlags
-	rest          []string
-	isInteractive bool
+	flags  *cmdFlags
+	fields []string
 }
 
 func parseArgs(args []string) (*cmdArgs, error) {
@@ -29,17 +16,71 @@ func parseArgs(args []string) (*cmdArgs, error) {
 		return nil, fmt.Errorf("args is empty")
 	}
 
-	var f cmdFlags
-	p := flags.NewParser(&f, flags.Default)
-	p.Usage = "[METHOD] URL [OPTIONS]"
-	args, err := p.ParseArgs(args)
+	f, rest, err := parseFlags(args)
 	if err != nil {
 		return nil, err
 	}
+
 	return &cmdArgs{
-		cmdName:       args[0],
-		flags:         f,
-		rest:          args[1:],
-		isInteractive: f.Interactive || len(args[1:]) == 0,
+		flags:  f,
+		fields: rest,
 	}, nil
+}
+
+// command becomes interactive mode if args has -i flag or no args
+func (c cmdArgs) isInteractive() bool {
+	return c.flags.Interactive || len(c.fields) == 0
+}
+
+func (c cmdArgs) buildOptions() (*Options, error) {
+	// validate fields
+	var url, method string
+	for _, field := range c.fields {
+		if isMethod(field) {
+			if len(method) > 0 {
+				return nil, fmt.Errorf("multiple methods: '%s %s'", method, field)
+			}
+			method = strings.ToUpper(field)
+		} else {
+			if len(url) > 0 {
+				return nil, fmt.Errorf("multiple URLs: '%s %s'", url, field)
+			}
+			url = field
+		}
+	}
+
+	// URL is required if not interactive mode
+	if !c.isInteractive() && len(url) == 0 {
+		return nil, fmt.Errorf("no URL")
+	}
+
+	header, err := c.flags.headers()
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.flags.bodyData()
+	if err != nil {
+		return nil, err
+	}
+
+	if !c.isInteractive() && len(method) == 0 {
+		if body == nil {
+			method = http.MethodGet
+		} else {
+			method = http.MethodPost
+		}
+	}
+
+	b := c.flags.basic()
+
+	opts := Options{
+		Method:       method,
+		URL:          url,
+		Basic:        b,
+		CustomHeader: header,
+		Body:         body,
+	}
+
+	return &opts, nil
 }

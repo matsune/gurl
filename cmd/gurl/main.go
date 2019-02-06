@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/matsune/gurl"
 )
 
 func main() {
-	exit := gurl.Run(os.Args)
-	os.Exit(exit)
+	if err := gurl.Run(os.Args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	os.Exit(0)
 }
