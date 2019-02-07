@@ -7,27 +7,28 @@ import (
 
 type App struct {
 	version  string
-	osArgs   []string
 	client   *http.Client
 	renderer *Renderer
 }
 
-func New(osArgs []string, version string) *App {
+func New() *App {
 	return &App{
-		version:  version,
-		osArgs:   osArgs,
 		client:   new(http.Client),
 		renderer: NewRenderer(),
 	}
+}
+
+func (a *App) SetVersion(ver string) {
+	a.version = ver
 }
 
 func (a *App) printVersion() {
 	fmt.Printf("gurl version %s\n", a.version)
 }
 
-func (a *App) Run() error {
+func (a *App) Run(osArgs []string) error {
 	// parse flag options and others
-	flags, fields, err := parseFlags(a.osArgs)
+	flags, fields, err := parseFlags(osArgs)
 	if err != nil {
 		return err
 	}

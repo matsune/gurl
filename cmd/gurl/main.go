@@ -10,9 +10,10 @@ import (
 const version = "1.0"
 
 func main() {
-	app := gurl.New(os.Args, version)
+	app := gurl.New()
+	app.SetVersion(version)
 
-	if err := app.Run(); err != nil {
+	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
