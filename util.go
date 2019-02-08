@@ -56,3 +56,7 @@ func basicAuth(username, password string) string {
 	auth := username + ":" + password
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
+
+func isEmpty(str string) bool {
+	return len(str) < 1
+}

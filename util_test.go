@@ -216,3 +216,27 @@ func Test_basicAuth(t *testing.T) {
 		})
 	}
 }
+
+func Test_isEmpty(t *testing.T) {
+	tests := []struct {
+		name string
+		str  string
+		want bool
+	}{
+		{
+			str:  "",
+			want: true,
+		},
+		{
+			str:  "aa",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isEmpty(tt.str); got != tt.want {
+				t.Errorf("isEmpty() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

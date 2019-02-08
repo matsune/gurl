@@ -94,10 +94,6 @@ func init() {
 	}
 }
 
-func isEmpty(str string) bool {
-	return len(str) < 1
-}
-
 func goInteractive(opts *Options) error {
 
 	// method
