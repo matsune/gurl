@@ -4,11 +4,12 @@ import (
 	"github.com/AlecAivazis/survey"
 )
 
+// TODO: mock test
 type Prompt interface {
-	AskPassword(msg string) (string, error)
+	InputText(msg string) (string, error)
+	InputPassword(msg string) (string, error)
 	Confirm(msg string) (bool, error)
 	SelectOne(msg string, options []string) (string, error)
-	Input(msg string, validation func(interface{}) error) (string, error)
 	Editor() string
 }
 
@@ -16,7 +17,15 @@ type surveyPrompt struct {
 	editor string
 }
 
-func (d *surveyPrompt) AskPassword(msg string) (string, error) {
+func (d *surveyPrompt) InputText(msg string) (res string, err error) {
+	p := &survey.Input{
+		Message: msg,
+	}
+	err = survey.AskOne(p, &res, nil)
+	return
+}
+
+func (d *surveyPrompt) InputPassword(msg string) (string, error) {
 	p := ""
 	s := &survey.Password{
 		Message: msg,
@@ -41,14 +50,6 @@ func (d *surveyPrompt) SelectOne(msg string, options []string) (res string, err 
 		Options: options,
 	}
 	err = survey.AskOne(p, &res, nil)
-	return
-}
-
-func (d *surveyPrompt) Input(msg string, validation func(interface{}) error) (res string, err error) {
-	p := &survey.Input{
-		Message: msg,
-	}
-	err = survey.AskOne(p, &res, validation)
 	return
 }
 

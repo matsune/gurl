@@ -45,7 +45,7 @@ func (a *App) Run(osArgs []string) error {
 	// becomes interactive mode if args has -i flag or no args
 	isInteractive := flags.Interactive || len(fields) == 0
 
-	opts, err := buildOptions(flags, fields, isInteractive)
+	opts, err := makeOptions(flags, fields, isInteractive)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (a *App) Run(osArgs []string) error {
 	// show prompt if Basic auth option doesn't have password
 	if opts.Basic != nil && isEmpty(opts.Basic.Password) {
 		msg := fmt.Sprintf("Password for user %s:", opts.Basic.User)
-		p, err := a.AskPassword(msg)
+		p, err := a.InputPassword(msg)
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func (a *App) Run(osArgs []string) error {
 		}
 	}
 
-	req, err := opts.buildRequest()
+	req, err := opts.httpRequest()
 	if err != nil {
 		return err
 	}
@@ -79,6 +79,15 @@ func (a *App) Run(osArgs []string) error {
 
 	if err := a.render(res); err != nil {
 		return err
+	}
+
+	if flags.Oneline {
+		str, err := opts.oneliner(osArgs[0])
+		if err != nil {
+			return err
+		}
+		fmt.Print(sectionStr("> one-liners"))
+		fmt.Println(str)
 	}
 
 	return nil

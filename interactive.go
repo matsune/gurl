@@ -35,7 +35,7 @@ func (a *App) interactive(opts *Options) error {
 	// URL
 
 	if isEmpty(opts.URL) {
-		url, err := a.Input("URL:", nil)
+		url, err := a.InputText("URL:")
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func (a *App) interactive(opts *Options) error {
 
 	if opts.Basic != nil {
 		if isEmpty(opts.Basic.User) {
-			user, err := a.Input("User", nil)
+			user, err := a.InputText("User")
 			if err != nil {
 				return err
 			}
@@ -65,7 +65,7 @@ func (a *App) interactive(opts *Options) error {
 
 		if isEmpty(opts.Basic.Password) {
 			msg := fmt.Sprintf("Password for user %s:", opts.Basic.User)
-			password, err := a.AskPassword(msg)
+			password, err := a.InputPassword(msg)
 			if err != nil {
 				return err
 			}
@@ -165,11 +165,11 @@ func (a *App) inputForm() (url.Values, error) {
 }
 
 func (a *App) inputKeyValue() (k string, v string, err error) {
-	k, err = a.Input("Key:", nil)
+	k, err = a.InputText("Key:")
 	if err != nil {
 		return
 	}
-	v, err = a.Input("Value:", nil)
+	v, err = a.InputText("Value:")
 	if err != nil {
 		return
 	}

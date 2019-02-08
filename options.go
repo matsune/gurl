@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -24,7 +23,7 @@ type (
 	}
 )
 
-func buildOptions(flags *cmdFlags, fields []string, isInteractive bool) (*Options, error) {
+func makeOptions(flags *cmdFlags, fields []string, isInteractive bool) (*Options, error) {
 	// validate fields
 	var url, method string
 	for _, field := range fields {
@@ -77,22 +76,28 @@ func buildOptions(flags *cmdFlags, fields []string, isInteractive bool) (*Option
 	return &opts, nil
 }
 
-func (opts *Options) buildRequest() (req *http.Request, err error) {
+func (opts *Options) httpRequest() (*http.Request, error) {
 	m := strings.ToUpper(opts.Method)
 	u := opts.URL
 	if strings.Index(u, "http") != 0 {
 		u = "http://" + u
 	}
+
+	var req *http.Request
+	var err error
 	if opts.Body != nil {
 		req, err = http.NewRequest(m, u, strings.NewReader(opts.Body.Raw()))
 	} else {
 		req, err = http.NewRequest(m, u, nil)
 	}
-	req.Header = *opts.buildHeader()
-	return
+	if err != nil {
+		return nil, err
+	}
+	req.Header = opts.httpHeader()
+	return req, nil
 }
 
-func (opts *Options) buildHeader() *http.Header {
+func (opts *Options) httpHeader() http.Header {
 	h := http.Header{}
 	for k, arr := range opts.CustomHeader {
 		for _, v := range arr {
@@ -105,29 +110,23 @@ func (opts *Options) buildHeader() *http.Header {
 	if opts.Basic != nil {
 		h.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth(opts.Basic.User, opts.Basic.Password)))
 	}
-	return &h
+	return h
 }
 
-func (opts *Options) outputOneline() (string, error) {
-	path := os.Args[0]
-	m := opts.Method
-	url := opts.URL
-
-	args := []string{path, m, url}
+func (opts *Options) oneliner(basename string) (string, error) {
+	url := fmt.Sprintf(`"%s"`, opts.URL)
+	args := []string{basename, opts.Method, url}
 
 	if opts.Basic != nil {
-		u := fmt.Sprintf("-u %s:%s", opts.Basic.User, opts.Basic.Password)
-		args = append(args, u)
+		args = append(args, fmt.Sprintf("-u %s:", opts.Basic.User))
 	}
 
-	if len(opts.CustomHeader) != 0 {
-		var h string
+	if len(opts.CustomHeader) > 0 {
 		for k, arr := range opts.CustomHeader {
 			for _, v := range arr {
-				h += fmt.Sprintf("-H %s=%s ", k, v)
+				args = append(args, fmt.Sprintf("-H %s=%s", k, v))
 			}
 		}
-		args = append(args, h)
 	}
 
 	if opts.Body != nil {
@@ -151,5 +150,5 @@ func (opts *Options) outputOneline() (string, error) {
 		args = append(args, d)
 	}
 
-	return sectionStr("> one-liners") + strings.Join(args, " "), nil
+	return strings.Join(args, " "), nil
 }
