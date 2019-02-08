@@ -47,8 +47,9 @@ func (a *App) Run(osArgs []string) error {
 	}
 
 	// show prompt if Basic auth option doesn't have password
-	if opts.Basic != nil && len(opts.Basic.Password) == 0 {
-		p, err := askBasicPassword(opts.Basic.User)
+	if opts.Basic != nil && isEmpty(opts.Basic.Password) {
+		msg := fmt.Sprintf("Password for user %s:", opts.Basic.User)
+		p, err := prompt.askPassword(msg)
 		if err != nil {
 			return err
 		}
@@ -57,7 +58,7 @@ func (a *App) Run(osArgs []string) error {
 
 	if isInteractive {
 		// start interactive prompt
-		if err = runInteractive(opts); err != nil {
+		if err = goInteractive(opts); err != nil {
 			return err
 		}
 	}
