@@ -6,15 +6,19 @@ import (
 )
 
 type App struct {
-	version  string
-	client   *http.Client
-	renderer *Renderer
+	version string
+	Prompt
+	http.Client
+	Renderer
 }
 
 func New() *App {
 	return &App{
-		client:   new(http.Client),
-		renderer: NewRenderer(),
+		Client: http.Client{},
+		Prompt: &surveyPrompt{
+			editor: "vim",
+		},
+		Renderer: *NewRenderer(),
 	}
 }
 
@@ -49,7 +53,7 @@ func (a *App) Run(osArgs []string) error {
 	// show prompt if Basic auth option doesn't have password
 	if opts.Basic != nil && isEmpty(opts.Basic.Password) {
 		msg := fmt.Sprintf("Password for user %s:", opts.Basic.User)
-		p, err := prompt.askPassword(msg)
+		p, err := a.AskPassword(msg)
 		if err != nil {
 			return err
 		}
@@ -58,7 +62,7 @@ func (a *App) Run(osArgs []string) error {
 
 	if isInteractive {
 		// start interactive prompt
-		if err = goInteractive(opts); err != nil {
+		if err = a.interactive(opts); err != nil {
 			return err
 		}
 	}
@@ -68,12 +72,12 @@ func (a *App) Run(osArgs []string) error {
 		return err
 	}
 
-	res, err := a.client.Do(req)
+	res, err := a.Do(req)
 	if err != nil {
 		return err
 	}
 
-	if err := a.renderer.render(res); err != nil {
+	if err := a.render(res); err != nil {
 		return err
 	}
 
