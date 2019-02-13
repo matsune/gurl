@@ -3,6 +3,7 @@ package gurl
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,57 +13,56 @@ import (
 	"github.com/go-xmlfmt/xmlfmt"
 )
 
-type (
-	StatusRender func(status string, code int) string
-	HeaderRender func(h http.Header) string
-	BodyRender   func(body string) string
+type BodyType int
 
-	Renderer struct {
-		Status StatusRender
-		Header HeaderRender
-		Plain  BodyRender
-		JSON   BodyRender
-		XML    BodyRender
-	}
+const (
+	BodyPlain BodyType = iota
+	BodyJSON
+	BodyXML
 )
 
-func NewRenderer() *Renderer {
-	return &Renderer{
-		Status: DefaultStatusRender,
-		Header: DefaultHeaderRender,
-		Plain:  PlainRender,
-		JSON:   JSONRender,
-		XML:    XMLRender,
+type (
+	Renderer interface {
+		Status(status string, code int) string
+		Header(h http.Header) string
+		Body(body string, ty BodyType) string
+		Oneliner(str string) string
 	}
+
+	renderer struct{}
+)
+
+func NewRenderer() Renderer {
+	return &renderer{}
 }
 
-func (r *Renderer) render(res *http.Response) error {
-	if r.Status != nil {
-		fmt.Print(r.Status(res.Status, res.StatusCode))
+func render(r Renderer, res *http.Response) error {
+	if r == nil {
+		return errors.New("Renderer is nil")
+	}
+	if res == nil {
+		return errors.New("response is nil")
 	}
 
-	if r.Header != nil {
-		fmt.Print(r.Header(res.Header))
-	}
+	fmt.Print(r.Status(res.Status, res.StatusCode))
 
-	var bodyRender BodyRender
+	fmt.Print(r.Header(res.Header))
+
+	bt := BodyPlain
 	cType := res.Header.Get("Content-Type")
 	if strings.Contains(cType, "application/json") {
-		bodyRender = r.JSON
+		bt = BodyJSON
 	} else if strings.Contains(cType, "application/xml") {
-		bodyRender = r.XML
-	} else {
-		bodyRender = r.Plain
+		bt = BodyXML
 	}
 
-	if bodyRender != nil {
-		defer res.Body.Close()
-		bodyBytes, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return err
-		}
-		fmt.Print(bodyRender(string(bodyBytes)))
+	defer res.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
 	}
+	fmt.Print(r.Body(string(bodyBytes), bt))
+
 	return nil
 }
 
@@ -79,23 +79,17 @@ func colorForStatus(code int) color.Attribute {
 	}
 }
 
-var sectionColor = color.New(color.Underline)
-
-func sectionStr(str string) string {
-	return fmt.Sprintf("%s\n", sectionColor.Sprint(str))
+func (r *renderer) section(str string) string {
+	return fmt.Sprintf("%s", color.New(color.Underline).Sprint(str))
 }
 
-func statusStr(status string, code int) string {
-	return color.New(colorForStatus(code)).Sprintf("%s", status)
+func (r *renderer) Status(status string, code int) string {
+	return fmt.Sprintf("%s\n%s\n\n", r.section("> Status"), color.New(colorForStatus(code)).Sprintf("%s", status))
 }
 
-func DefaultStatusRender(status string, code int) string {
-	return fmt.Sprintf("%s%s\n\n", sectionStr("> Status"), statusStr(status, code))
-}
-
-func DefaultHeaderRender(h http.Header) string {
+func (r *renderer) Header(h http.Header) string {
 	var b bytes.Buffer
-	b.WriteString(sectionStr("> Header"))
+	b.WriteString(r.section("> Header\n"))
 	for k, arr := range h {
 		b.WriteString(k + ": ")
 		for i, v := range arr {
@@ -110,19 +104,31 @@ func DefaultHeaderRender(h http.Header) string {
 	return b.String()
 }
 
-func PlainRender(body string) string {
-	return fmt.Sprintf("%s%s\n\n", sectionStr("> Body"), body)
+func (r *renderer) Body(body string, ty BodyType) string {
+	fmt.Println(r.section("> Body"))
+	switch ty {
+	case BodyJSON:
+		return r.json(body)
+	case BodyXML:
+		return r.xml(body)
+	default:
+		return fmt.Sprintf("%s\n\n", body)
+	}
 }
 
-func JSONRender(body string) string {
+func (r *renderer) json(body string) string {
 	var b bytes.Buffer
 	if err := json.Indent(&b, []byte(body), "", "  "); err != nil {
 		return ""
 	}
-	return fmt.Sprintf("%s%s\n\n", sectionStr("> Body"), b.String())
+	return fmt.Sprintf("%s\n\n", b.String())
 }
 
-func XMLRender(body string) string {
+func (r *renderer) xml(body string) string {
 	x := xmlfmt.FormatXML(body, "", "  ")
-	return fmt.Sprintf("%s%s\n\n", sectionStr("> Body"), x)
+	return fmt.Sprintf("%s\n\n", x)
+}
+
+func (r *renderer) Oneliner(str string) string {
+	return fmt.Sprintf("%s\n%s\n", r.section("> one-liners"), str)
 }

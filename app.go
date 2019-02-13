@@ -18,7 +18,7 @@ func New() *App {
 		Prompt: &surveyPrompt{
 			editor: "vim",
 		},
-		Renderer: *NewRenderer(),
+		Renderer: NewRenderer(),
 	}
 }
 
@@ -77,7 +77,7 @@ func (a *App) Run(osArgs []string) error {
 		return err
 	}
 
-	if err := a.render(res); err != nil {
+	if err := render(a.Renderer, res); err != nil {
 		return err
 	}
 
@@ -86,8 +86,7 @@ func (a *App) Run(osArgs []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Print(sectionStr("> one-liners"))
-		fmt.Println(str)
+		fmt.Print(a.Oneliner(str))
 	}
 
 	return nil
