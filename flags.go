@@ -9,7 +9,6 @@ import (
 type cmdFlags struct {
 	Version     bool     `short:"v" long:"version" description:"Show version"`
 	Interactive bool     `short:"i" long:"interactive" description:"Interactive mode"`
-	Oneline     bool     `short:"o" long:"oneline" description:"Output oneline command (only interactive mode)"`
 	Basic       string   `short:"u" long:"user" description:"Basic auth <user[:password]>"`
 	Headers     []string `short:"H" long:"header" description:"Extra header <key:value>"`
 	JSON        string   `short:"j" long:"json" description:"JSON data"`

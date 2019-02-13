@@ -81,7 +81,7 @@ func (a *App) Run(osArgs []string) error {
 		return err
 	}
 
-	if flags.Oneline {
+	if isInteractive {
 		str, err := opts.oneliner(osArgs[0])
 		if err != nil {
 			return err

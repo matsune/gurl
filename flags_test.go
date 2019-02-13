@@ -74,18 +74,6 @@ func Test_parseFlags(t *testing.T) {
 			wantFields: []string{},
 		},
 		{
-			name:       "oneline short flag",
-			osArgs:     []string{"gurl", "-o"},
-			wantFlags:  &cmdFlags{Oneline: true},
-			wantFields: []string{},
-		},
-		{
-			name:       "oneline long flag",
-			osArgs:     []string{"gurl", "--oneline"},
-			wantFlags:  &cmdFlags{Oneline: true},
-			wantFields: []string{},
-		},
-		{
 			name:       "basic key value flag",
 			osArgs:     []string{"gurl", "-u", "user:pass"},
 			wantFlags:  &cmdFlags{Basic: "user:pass"},
