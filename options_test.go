@@ -1,91 +1,61 @@
 package gurl
 
 import (
-	"bytes"
 	"net/http"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func TestOptionsBuildHeader(t *testing.T) {
-	opts := Options{
-		CustomHeader: http.Header{
-			"a": []string{"b"},
-		},
-		Body: JSONData(`{"user":"u","pass":"p"}`),
-	}
-	h := opts.buildHeader()
-	assert.Equal(t, "application/json", h.Get("Content-Type"))
-	assert.Equal(t, "b", h.Get("A"))
-}
+func TestOptions_oneliner(t *testing.T) {
+	basename := "gurl"
 
-func TestOptionsBuildRequest(t *testing.T) {
-	opt := Options{
-		Method: "post",
-		URL:    "http://localhost",
-		CustomHeader: http.Header{
-			"a": []string{"b"},
-		},
-		Body: XMLData(`<user>u</user><password>p</password>`),
+	type fields struct {
+		Method       string
+		URL          string
+		Basic        *Basic
+		CustomHeader http.Header
+		Body         BodyData
 	}
-	req, err := opt.buildRequest()
-	if assert.NoError(t, err) {
-		assert.Equal(t, http.MethodPost, req.Method)
-		assert.Equal(t, "http://localhost", req.URL.String())
-		assert.Equal(t, "b", req.Header.Get("a"))
-		assert.Equal(t, "application/xml", req.Header.Get("Content-Type"))
-		assert.Nil(t, opt.Basic)
 
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(req.Body)
-		b := buf.String()
-		assert.Equal(t, `<user>u</user><password>p</password>`, b)
-	}
-}
-
-func TestParseOptions(t *testing.T) {
-	json := `{"user": "gurl","pass": "pass"}`
-	c := cmdArgs{
-		cmdName: "gurl",
-		flags: cmdFlags{
-			Basic:   "user:password",
-			Headers: []string{"a:b"},
-			JSON:    json,
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "xml data",
+			fields: fields{
+				Method: "post",
+				URL:    "github.com",
+				Basic: &Basic{
+					User:     "user",
+					Password: "pass",
+				},
+				CustomHeader: http.Header{
+					"a": []string{"b", "c"},
+				},
+				Body: XMLData("<a><b></b></a>"),
+			},
+			want: `gurl post "github.com" -u user: -H a=b -H a=c -x '<a><b></b></a>'`,
 		},
-		rest:          []string{"POST", "http://localhost"},
-		isInteractive: false,
 	}
-	opts, err := parseOptions(&c)
-	if assert.NoError(t, err) {
-		if assert.NotNil(t, opts.Basic) {
-			assert.Equal(t, "user", opts.Basic.User)
-			assert.Equal(t, "password", opts.Basic.Password)
-		}
-		assert.Equal(t, http.MethodPost, opts.Method)
-		assert.Equal(t, "http://localhost", opts.URL)
-		if assert.NotNil(t, opts.CustomHeader["a"]) {
-			assert.Contains(t, opts.CustomHeader["a"], "b")
-		}
-		var jsonType *JSONData
-		if assert.IsType(t, jsonType, opts.Body) {
-			v, _ := opts.Body.(*JSONData)
-			assert.Equal(t, json, v.Raw())
-			assert.Equal(t, "application/json", v.ContentType())
-		}
-	}
-}
-
-func TestParseOptionsBasicNoPassword(t *testing.T) {
-	c := cmdArgs{
-		flags: cmdFlags{
-			Basic: "user",
-		},
-		rest: []string{"http://localhost"},
-	}
-	opts, err := parseOptions(&c)
-	if assert.NoError(t, err) {
-		assert.Equal(t, "user", opts.Basic.User)
-		assert.Equal(t, "", opts.Basic.Password)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := &Options{
+				Method:       tt.fields.Method,
+				URL:          tt.fields.URL,
+				Basic:        tt.fields.Basic,
+				CustomHeader: tt.fields.CustomHeader,
+				Body:         tt.fields.Body,
+			}
+			got, err := opts.oneliner(basename)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Options.oneliner() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Options.oneliner() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
