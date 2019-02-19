@@ -2,7 +2,6 @@ package gurl
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-xmlfmt/xmlfmt"
+	"github.com/matsune/jc"
 )
 
 type BodyType int
@@ -29,11 +29,20 @@ type (
 		Oneliner(str string) string
 	}
 
-	renderer struct{}
+	renderer struct {
+		jc.JC
+	}
 )
 
 func NewRenderer() Renderer {
-	return &renderer{}
+	return &renderer{
+		jc.New(
+			jc.KeyColor(color.New(color.FgHiBlue)),
+			jc.NumberColor(color.New(color.FgCyan)),
+			jc.StringColor(color.New(color.FgGreen)),
+			jc.BoolColor(color.New(color.FgHiRed)),
+		),
+	}
 }
 
 func render(r Renderer, res *http.Response) error {
@@ -118,10 +127,9 @@ func (r *renderer) Body(body string, ty BodyType) string {
 
 func (r *renderer) json(body string) string {
 	var b bytes.Buffer
-	if err := json.Indent(&b, []byte(body), "", "  "); err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%s\n\n", b.String())
+	r.SetWriter(&b)
+	r.Colorize(body)
+	return b.String()
 }
 
 func (r *renderer) xml(body string) string {
