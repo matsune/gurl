@@ -110,6 +110,8 @@ func (opts *Options) httpHeader() http.Header {
 	if opts.Basic != nil {
 		h.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth(opts.Basic.User, opts.Basic.Password)))
 	}
+
+	h.Set("User-Agent", fmt.Sprintf("gurl/%s", Version))
 	return h
 }
 
