@@ -30,18 +30,18 @@ type (
 	}
 
 	renderer struct {
-		jc.JC
+		*jc.JC
 	}
 )
 
 func NewRenderer() Renderer {
+	j := jc.New()
+	j.SetKeyColor(color.New(color.FgHiBlue))
+	j.SetNumberColor(color.New(color.FgCyan))
+	j.SetStringColor(color.New(color.FgGreen))
+	j.SetBoolColor(color.New(color.FgHiRed))
 	return &renderer{
-		jc.New(
-			jc.KeyColor(color.New(color.FgHiBlue)),
-			jc.NumberColor(color.New(color.FgCyan)),
-			jc.StringColor(color.New(color.FgGreen)),
-			jc.BoolColor(color.New(color.FgHiRed)),
-		),
+		JC: j,
 	}
 }
 
