@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/go-xmlfmt/xmlfmt"
+	xml "github.com/matsune/go-xml"
 	"github.com/matsune/jc"
 )
 
@@ -133,8 +133,15 @@ func (r *renderer) json(body string) string {
 }
 
 func (r *renderer) xml(body string) string {
-	x := xmlfmt.FormatXML(body, "", "  ")
-	return fmt.Sprintf("%s\n\n", x)
+	ast, err := xml.Parse(body)
+	if err != nil {
+		return ""
+	}
+	var b bytes.Buffer
+	formatter := xml.NewFormatter()
+	formatter.Writer = &b
+	formatter.Format(ast)
+	return b.String()
 }
 
 func (r *renderer) Oneliner(str string) string {
