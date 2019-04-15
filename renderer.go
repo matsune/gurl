@@ -59,9 +59,9 @@ func render(r Renderer, res *http.Response) error {
 
 	bt := BodyPlain
 	cType := res.Header.Get("Content-Type")
-	if strings.Contains(cType, "application/json") {
+	if strings.Contains(cType, "json") {
 		bt = BodyJSON
-	} else if strings.Contains(cType, "application/xml") {
+	} else if strings.Contains(cType, "xml") {
 		bt = BodyXML
 	}
 

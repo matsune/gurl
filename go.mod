@@ -16,5 +16,3 @@ require (
 	github.com/stretchr/testify v1.2.2 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.7.1 // indirect
 )
-
-replace github.com/matsune/go-xml => ../go-xml
