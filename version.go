@@ -1,3 +1,3 @@
 package gurl
 
-const Version = "1.0"
+const Version = "1.1"
