@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
@@ -128,7 +129,10 @@ func (r *renderer) Body(body string, ty BodyType) string {
 func (r *renderer) json(body string) string {
 	var b bytes.Buffer
 	r.SetWriter(&b)
-	r.Colorize(body)
+	if err := r.Colorize(body); err != nil {
+		log.Println(err)
+		return body
+	}
 	return b.String()
 }
 
