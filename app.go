@@ -14,7 +14,8 @@ type App struct {
 
 func New() *App {
 	return &App{
-		Client: http.Client{},
+		version: appVersion,
+		Client:  http.Client{},
 		Prompt: &surveyPrompt{
 			editor: "vim",
 		},
@@ -22,20 +23,17 @@ func New() *App {
 	}
 }
 
-func (a *App) SetVersion(ver string) {
-	a.version = ver
-}
-
 func (a *App) printVersion() {
 	fmt.Printf("gurl version %s\n", a.version)
 }
 
-func (a *App) Run(osArgs []string) error {
+func Run(osArgs []string) error {
 	// parse flag options and others
 	flags, fields, err := parseFlags(osArgs)
 	if err != nil {
 		return err
 	}
+	a := New()
 
 	if flags.Version {
 		a.printVersion()

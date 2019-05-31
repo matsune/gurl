@@ -159,6 +159,10 @@ func Test_cmdFlags_headers(t *testing.T) {
 				"b": []string{"d"},
 			},
 		},
+		{
+			Headers: []string{"a=b"},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

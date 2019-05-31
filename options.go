@@ -111,7 +111,7 @@ func (opts *Options) httpHeader() http.Header {
 		h.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth(opts.Basic.User, opts.Basic.Password)))
 	}
 
-	h.Set("User-Agent", fmt.Sprintf("gurl/%s", Version))
+	h.Set("User-Agent", fmt.Sprintf("gurl/%s", appVersion))
 	return h
 }
 
@@ -126,7 +126,7 @@ func (opts *Options) oneliner(basename string) (string, error) {
 	if len(opts.CustomHeader) > 0 {
 		for k, arr := range opts.CustomHeader {
 			for _, v := range arr {
-				args = append(args, fmt.Sprintf("-H %s=%s", k, v))
+				args = append(args, fmt.Sprintf("-H %s:%s", k, v))
 			}
 		}
 	}

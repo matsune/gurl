@@ -36,7 +36,7 @@ func TestOptions_oneliner(t *testing.T) {
 				},
 				Body: XMLData("<a><b></b></a>"),
 			},
-			want: `gurl post "github.com" -u user: -H a=b -H a=c -x '<a><b></b></a>'`,
+			want: `gurl post "github.com" -u user: -H a:b -H a:c -x '<a><b></b></a>'`,
 		},
 	}
 	for _, tt := range tests {
