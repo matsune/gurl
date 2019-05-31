@@ -3,6 +3,8 @@ package gurl
 import (
 	"fmt"
 	"net/http"
+
+	flg "github.com/jessevdk/go-flags"
 )
 
 type App struct {
@@ -31,6 +33,9 @@ func Run(osArgs []string) error {
 	// parse flag options and others
 	flags, fields, err := parseFlags(osArgs)
 	if err != nil {
+		if outErr, ok := err.(*flg.Error); ok || outErr.Type == flg.ErrHelp {
+			return nil
+		}
 		return err
 	}
 	a := New()
