@@ -1,3 +1,3 @@
 package gurl
 
-const appVersion = "1.2.1"
+const appVersion = "1.2.2"
